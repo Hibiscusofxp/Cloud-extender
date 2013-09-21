@@ -26,7 +26,13 @@ class FileSystemInformation(object):
 
 	This includes the very most rudimentary information like file name (full name), file size, date etc.
 	"""
-	def __init__(self, fullPath, lastModified, size):
+
+	fullPath = None
+	lastModified = None
+	size = None
+	parent = None
+
+	def __init__(self, fullPath, lastModified, size, parent):
 		"""
 		Please initialize your classes (including FileInformation, DirectoryInformation) this way. 
 		You may need to implement your own constructors for FileInformation and DirectoryInformation in order to get the necessary authentication information passed in
@@ -44,6 +50,7 @@ class FileSystemInformation(object):
 		else:
 			self.lastModified = lastModified
 		self.size = size
+		self.parent = parent
 
 	@property
 	def name(self):
@@ -54,6 +61,11 @@ class FileSystemInformation(object):
 
 	def __unicode__(self):
 		return self.fullPath
+
+	def getRelativePath(self, rootElement = None):
+		if self == rootElement or self.parent == None:
+			return self.name
+		return self.parent.getRelativePath(rootElement) + '/' + self.name
 
 class FileInformation(FileSystemInformation):
 	"""
