@@ -129,6 +129,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				lastModified = t + " GMT"
 				size = item[8]
 				fileid = item[0]
+				containerid = item[3]			
 				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid)
 
 	def createDirectory(self, name):
