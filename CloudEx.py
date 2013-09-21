@@ -26,6 +26,21 @@ class CloudEx:
 	# 	arr = eval(arr[0])
 	# 	self.sessionkey = arr['RESULT']['SESSIONKEY']
 	# 	return result
+
+	def Auth(self):
+		fullurl = "https://api.point.io/v2/auth.json"
+		paras = {
+			'email':self.email,
+			'password':self.password,
+			'apikey':self.apikey
+		}
+		paras = urllib.urlencode(paras)
+		result = urllib.urlopen(fullurl, paras)
+		arr = result.readlines()
+		arr = json.loads(arr[0])
+		self.sessionkey = arr['RESULT']['SESSIONKEY']
+		return result
+
 	def getFiles(self, authorization):
 		reque = urllib2.Request(
 			"https://api.point.io/v2/storagetypes/list.json",
@@ -96,3 +111,49 @@ class CloudEx:
 	# 	return req
 	# def CreateNewStorage(siteID):
 		# do on http://point.io/tutorial!!!!
+
+	def UploadFile(self, authorization, pathAndFilename, filename, folderid):
+		"""
+		Upload file in pathAndFilename under folderid. Rename as filename
+		"""
+		files = {'file': open(pathAndFilename, 'rb')}
+		#folderid = folderidVal
+		#filename = filenamjson.loads
+		fileid = filename
+		filecontents = files
+		data = {
+			'folderid': folderid,
+			'filename': filename,
+			'fileid': fileid,
+			'filecontents': filecontents
+		}
+		req = requests.post(self.url+'/folders/files/upload.json',
+			headers= {'Authorization': authorization},
+			files = files,
+			data = data
+		)
+		return req
+		#example: result = cld.UploadFile(cld.sessionkey, r"ThisIsJustATesetFile.txt", "JustATest.txt", "64B367EA-286D-481F-92DD9E28E9B3B4C1")
+
+	def DownloadFile(self, authorization, folderid, filename, fileid, downloadname):
+		paras = {
+			'folderid': folderid,
+			'filename': filename,
+			'fileid': fileid,
+		}
+		paras = urllib.urlencode(paras)
+		reque = urllib2.Request(
+			"https://api.point.io/v2/folders/files/download.json?"+paras,
+			headers={
+				'Authorization': authorization,
+			})
+		req = urllib2.urlopen(reque)
+		res = req.readlines()
+		res = json.loads(res[0])
+		resURL = res['RESULT']
+		resFile = urllib.urlopen(resURL)
+		fout = open(downloadname,'wb')
+		fout.write(resFile.read())
+		fout.close()
+		return (resURL, resFile)
+		#example: result = cld.DownloadFile(cld.sessionkey, r"64B367EA-286D-481F-92DD9E28E9B3B4C1", "JustATest.txt", "10529642791")
