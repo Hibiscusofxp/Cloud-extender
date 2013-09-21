@@ -32,6 +32,24 @@ class DirectoryInformation(fs.DirectoryInformation):
 			if os.path.isfile(fnFull):
 				yield FileInformation(fnFull, self)
 
+	def getDirectories(self):
+		for fn in os.listdir(unicode(self.fullPath)):
+			fnFull = os.path.join(self.fullPath, fn)
+			if os.path.isdir(fnFull):
+				yield DirectoryInformation(fnFull, self)
+
+	def delete(self):
+		os.remove(self.fullPath)
+
+	def createDirectory(self, name):
+		os.mkdir(os.path.join(self.fullPath,name))
+		return DirectoryInformation(os.path.join(self.fullPath, name), self)
+
+	def createFile(self, name, file):
+		fnFull = os.path.join(self.fullPath, name)
+		shutil.copyfileobj(file, open(fnFull, 'wb'))
+		return FileInformation(fnFull, self)
+
 
 class FileSystem(fs.FileSystem):
 	rootDir = None
@@ -39,4 +57,4 @@ class FileSystem(fs.FileSystem):
 		self.rootDir = rootDir
 
 	def getRoot(self):
-		return DirectoryInfo(os.path.abspath(rootDir))
+		return DirectoryInformation(os.path.abspath(self.rootDir))
