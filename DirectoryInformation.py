@@ -1,4 +1,5 @@
 from .api import fs
+#import fs
 import os
 import os.path
 import stat
@@ -7,6 +8,7 @@ import shutil
 import urllib,urllib2,requests
 import json
 import yaml
+import dateutil
 
 class FileInformation(fs.FileInformation):
 	authorization = None
@@ -49,10 +51,12 @@ class FileInformation(fs.FileInformation):
 		#folderid = folderidVal
 		#filename = filenamjson.loads
 		# newfileid = self.filename
+		# CAUTION: filename will not change to be the uploaded file name
 		filecontents = files
 		data = {
 			'folderid': self.folderid,
 			'filename': self.filename,
+			# if filename is different, a new file will be uploaded
 			'fileid': self.fileid,
 			'filecontents': filecontents
 		}
@@ -62,10 +66,16 @@ class FileInformation(fs.FileInformation):
 			files = files,
 			data = data
 		)
-		#TODO See how to extract data from response. We need date
-		#return req
+		res = req.json()
+		# error exception
+		# update lastModified
+		rawTime = res['INFO']['DETAILS']['RESULT']['MODIFIED']
+		time = rawTime.split("'")[1]
+		self.lastModified = dateutil.parser.parse(time + " GMT")
+		# update size
+		self.size = res['INFO']['DETAILS']['RESULT']['SIZE']
+		# CAUTION: fileID might not be correct after upload! leave it to DirInfo class
 		# no further upload or delete!
-		# CAUTION: fileID might not be correct after upload!
 
 	def delete(self):
 		paras = {
@@ -80,7 +90,6 @@ class FileInformation(fs.FileInformation):
 				'Authorization': self.authorization,
 			})
 		req = urllib2.urlopen(reque)
-		#return req
 
 class DirectoryInformation(fs.DirectoryInformation):
 	url_list = 'https://api.point.io/v2/folders/list.json'
@@ -103,13 +112,15 @@ class DirectoryInformation(fs.DirectoryInformation):
 		response = urllib2.urlopen(request)
 		r = response.readline()
 		py = json.loads(r)
+		print py
 		for item in py["RESULT"]["DATA"]:
 			if (item[2] != "DIR"):
 				fullPath = item[4] + item[1]
 				t = item[7].split("'")[1]
 				lastModified = t + " GMT"
 				size = item[8]
-				fileid = item[0]
+				# fileid = item[0]
+				fileid = str(int(item[0]) if isinstance(item[0], float) else item[0])
 				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid)
 
 	def getDirectories(self):
@@ -130,7 +141,8 @@ class DirectoryInformation(fs.DirectoryInformation):
 				t = item[7].split("'")[1]
 				lastModified = t + " GMT"
 				size = item[8]
-				fileid = item[0]
+				# fileid = item[0]
+				fileid = str(int(item[0]) if isinstance(item[0], float) else item[0])
 				containerid = int(item[3]) if isinstance(item[3], float) else item[3]
 				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid)
 
@@ -160,9 +172,16 @@ class DirectoryInformation(fs.DirectoryInformation):
 		return DirectoryInformation(self.folderid, self.authorization, path, self, lastModified, size, containerid)		
 
 	def createFile(self, name, file):
-		fnFull = os.path4join(self.fullPath, name)
-		shutil.copyfileobj(file, open(fnFull, 'wb'))
-		return FileInformation(fnFull, self)
+		fnFull = os.path.join(self.fullPath, name)		
+		newFile = FileInformation(fnFull, "", 0, self.parent, self.authorization, self.folderid, name)
+		newFile.upload(file);
+		# CAUTION: fileid might not correct now!
+		# remaining: grab the fileid
+		fileList = self.getFiles()
+		for item in fileList:
+			if (item.filename == name):
+				newFile.fileid = item.fileid
+		return newFile
 
 class FileSystem(fs.FileSystem):
 	rootDir = '/'
