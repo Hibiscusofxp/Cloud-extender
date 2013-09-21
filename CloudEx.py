@@ -30,8 +30,8 @@ class CloudEx:
 			headers={
 				"Authorization": authorization
 			})
-		req = urllib2.urlopen(reque)
-		return req
+		response = urllib2.urlopen(reque)
+		return response
 
 	def getFileInfo(self, authorization, shareId):
 		# Prepare the data
@@ -49,12 +49,14 @@ class CloudEx:
 			})
 		 
 		response = urllib2.urlopen(request)
+
+		return	response
 		  
-		html = response.read()
+		# html = response.read()
 		 
 		# Print the result
 		# print html
-		return html
+		# return html
 	# def GetSiteParas(siteID):
 	# 	# do on http://point.io/tutorial!!!!
 	# 	self.siteTypeId = siteID
