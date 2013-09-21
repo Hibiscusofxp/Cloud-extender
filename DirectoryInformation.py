@@ -84,7 +84,7 @@ class FileInformation(fs.FileInformation):
 class DirectoryInformation(fs.DirectoryInformation):
 	url_list = 'https://api.point.io/v2/folders/list.json'
 	url_create = 'https://api.point.io/v2/folders/create.json'
-	def __init__(self, folderid, authorization, path, parent = None, lastModified = None, size = None):
+	def __init__(self, folderid, authorization, path, parent = None, lastModified = None, size = None, containerid = None):
 		super(DirectoryInformation, self).__init__(path, lastModified, size, parent) 
 
 		self.folderid = folderid
@@ -129,7 +129,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				lastModified = t + " GMT"
 				size = item[8]
 				fileid = item[0]
-				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size)
+				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid)
 
 	def createDirectory(self, name):
 		query_args = { 'folderId':self.folderid, 'foldername':name }
@@ -142,7 +142,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 		path = path + "/" + name
 
 		#Get lastMod and size from response
-		return DirectoryInformation(self.folderid, self.authorization, path, self)		
+		return DirectoryInformation(self.folderid, self.authorization, path, self, lastModified, size, containerid)		
 
 	def createFile(self, name, file):
 		fnFull = os.path4join(self.fullPath, name)
@@ -157,4 +157,4 @@ class FileSystem(fs.FileSystem):
 		self.folderid = folderid
 		self.authorization = authorization
 	def getRoot(self):
-		return DirectoryInformation(self.folderid, self.authorization, self.rootDir, None, None, None)
+		return DirectoryInformation(self.folderid, self.authorization, self.rootDir, None, None, None, '')
