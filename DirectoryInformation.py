@@ -84,14 +84,14 @@ class FileInformation(fs.FileInformation):
 		return req
 
 class DirectoryInformation(fs.DirectoryInformation):
-	def __init__(self, folderid, authorization, path, parent = None):
+	def __init__(self, folderid, authorization, path, parent, lastModified, size = None):
 		url_list = 'https://api.point.io/v2/folders/list.json'
 		url_create = 'https://api.point.io/v2/folders/create.json'
-		super(DirectoryInformation, self).__init__(path, parent) #need modify
+		super(DirectoryInformation, self).__init__(path, lastModified, size, parent) 
 
-		self.folderid = folderid
-		self.authorization = authorization
-		self.parent = parent
+		# self.folderid = folderid
+		# self.authorization = authorization
+		# self.parent = parent
 
 	def getFiles(self):
 		query_args = { 'folderId':self.folderid }
@@ -132,8 +132,6 @@ class DirectoryInformation(fs.DirectoryInformation):
 				size = item[8]
 				fileid = item[0]
 				yield DirectoryInformation(self.folderid, self.authorization, path, parent)
-	# def delete(self):
-		# os.remove(self.fullPath)
 
 	def createDirectory(self, name):
 		query_args = { 'folderId':self.folderid, 'foldername':name }
@@ -150,3 +148,14 @@ class DirectoryInformation(fs.DirectoryInformation):
 		fnFull = os.path4join(self.fullPath, name)
 		shutil.copyfileobj(file, open(fnFull, 'wb'))
 		return FileInformation(fnFull, self)
+
+class FileSystem(fs.FileSystem):
+	rootDir = '/'
+	folderid = None
+	authorization = None
+	parent = None
+	def __init__(self, folderid, authorization, parent):
+		self.folderid = folderid
+		self.authorization = authorization
+	def getRoot(self):
+		return DirectoryInformation(self.folderid, self.authorization, self.rootDir, self.parent)
