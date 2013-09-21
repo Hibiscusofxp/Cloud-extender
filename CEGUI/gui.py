@@ -3,6 +3,20 @@ import CloudEx as CE
 
 class Example(wx.Frame):
 
+    def Auth(self, email, password, apikey):
+        fullurl = "https://api.point.io/v2/auth.json"
+        paras = {
+            'email':email,
+            'password':password,
+            'apikey':apikey
+        }apikey
+        paras = urllib.urlencode(paras)
+        result = urllib.urlopen(fullurl, paras)
+        arr = result.readlines()
+        arr = json.loads(arr[0])
+        self.sessionkey = arr['RESULT']['SESSIONKEY']
+        return result
+
     #Function runs on the event of when about menu button is clicked
     def OnAbout(self,e):
         # Create a message dialog box
@@ -23,8 +37,8 @@ class Example(wx.Frame):
             self.pathBox.SetValue(self.dirname)
         dlg.Destroy()
         
-    #Function caches data for another session in data.dat
-    def SaveSettings(self):
+    #Function caches data for another session in data.datapikeyapikeyapikey
+    def SaveSettings(self):apikey
         f = open('data.dat', 'w')
         j = json.dumps({'path': self.pathBox.GetValue(), 'email': self.emailBox.GetValue(), 'password': self.passwordBox.GetValue(), 'apikey': self.apikeyBox.GetValue()})
         f.write(j)
