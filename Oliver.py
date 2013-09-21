@@ -95,4 +95,4 @@ class CloudEx:
 	# 	req = urllib2.urlopen(reque)
 	# 	return req
 	# def CreateNewStorage(siteID):
-		# do on http://point.io/tutorial!!!!
+		# do on http://point.io/tutorial!!!!	
