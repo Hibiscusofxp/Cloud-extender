@@ -1,4 +1,3 @@
-
 import os,sys
 import urllib,urllib2,requests
 
@@ -25,15 +24,37 @@ class CloudEx:
 	# 	arr = eval(arr[0])
 	# 	self.sessionkey = arr['RESULT']['SESSIONKEY']
 	# 	return result
-	def GetStorageList(self):
+	def getFiles(self, authorization):
 		reque = urllib2.Request(
 			"https://api.point.io/v2/storagetypes/list.json",
 			headers={
-				"Authorization": self.authorization
+				"Authorization": authorization
 			})
 		req = urllib2.urlopen(reque)
-		# self.siteTypeId = 15
 		return req
+
+	def getFileInfo(self, authorization, shareId):
+		# Prepare the data
+		url = 'https://api.point.io/v2/folders/list.json'
+
+		query_args = { 'folderId':shareId }
+		 
+		# This urlencodes your data (that's why we need to import urllib at the top)
+		data = urllib.urlencode(query_args)
+		 
+		# Send HTTP POST request
+		request = urllib2.Request(url, data, 
+			headers = {
+				"Authorization": authorization
+			})
+		 
+		response = urllib2.urlopen(request)
+		  
+		html = response.read()
+		 
+		# Print the result
+		# print html
+		return html
 	# def GetSiteParas(siteID):
 	# 	# do on http://point.io/tutorial!!!!
 	# 	self.siteTypeId = siteID
