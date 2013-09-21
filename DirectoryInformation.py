@@ -88,6 +88,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 	authorization = None
 	parent = None
 	url_list = 'https://api.point.io/v2/folders/list.json'
+	url_create = 'https://api.point.io/v2/folders/create.json'
 	def __init__(self, folderid, authorization, parent):
 		self.folderid = folderid
 		self.authorization = authorization
@@ -107,8 +108,9 @@ class DirectoryInformation(fs.DirectoryInformation):
 		py = json.loads(r)
 		for item in py["RESULT"]["DATA"]:
 			if (item[2] != "DIR"):
-				fullPath = item[1] + item[4]
-				lastModified = item[7]
+				fullPath = item[4] + item[1]
+				t = item[7].split("'")[1]
+				lastModified = t + " GMT"
 				size = item[8]
 				fileid = item[0]
 				yield FileInformation(fullPath, lastModified, size, self.parent, self.authorization, self.folderid, fileid)
@@ -129,8 +131,9 @@ class DirectoryInformation(fs.DirectoryInformation):
 		# folderid, authorization, parent
 		for item in py["RESULT"]["DATA"]:
 			if (item[2] == "DIR"):
-				fullPath = item[1] + item[4]
-				lastModified = item[7]
+				fullPath = item[4] + item[1]
+				t = item[7].split("'")[1]
+				lastModified = t + " GMT"
 				size = item[8]
 				fileid = item[0]
 				yield DirectoryInformation(self.folderid, self.authorization, self)
@@ -138,10 +141,27 @@ class DirectoryInformation(fs.DirectoryInformation):
 		# os.remove(self.fullPath)
 
 	def createDirectory(self, name):
+		query_args = { 'folderId':self.folderid, 'foldername':name }
+		data = urllib.urlencode(query_args)
+		request = urllib2.Request(self.url_create, data, 
+			headers = {
+				"Authorization": self.authorization
+			})
+		response = urllib2.urlopen(request)
+		r = response.readline()
+		py = json.loads(r)
+		# folderid, authorization, parent
+		for item in py["RESULT"]["DATA"]:
+			if (item[2] == "DIR"):
+				fullPath = item[4] + item[1]
+				lastModified = item[7]
+				size = item[8]
+				fileid = item[0]
+				yield DirectoryInformation(self.folderid, self.authorization, self)		
 		os.mkdir(os.path.join(self.fullPath,name))
 		return DirectoryInformation(os.path.join(self.fullPath, name), self)
 
 	def createFile(self, name, file):
-		fnFull = os.path.join(self.fullPath, name)
+		fnFull = os.path4join(self.fullPath, name)
 		shutil.copyfileobj(file, open(fnFull, 'wb'))
 		return FileInformation(fnFull, self)
