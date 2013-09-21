@@ -14,10 +14,7 @@ class FileInformation(fs.FileInformation):
 	fileid = None
 
 	def __init__(self, fullPath, lastModified, size, parent, authorization, folderid, fileid):
-		self.fullPath = fullPath
-		self.lastModified = lastModified
-		self.size = size
-		self.parent = parent
+		super(FileInformation, self).__init__(fullPath, lastModified, size, parent)
 		self.authorization = authorization
 		self.filename = self.name
 		self.folderid = folderid
@@ -64,7 +61,8 @@ class FileInformation(fs.FileInformation):
 			files = files,
 			data = data
 		)
-		return req
+		#TODO See how to extract data from response. We need date
+		#return req
 		# no further upload or delete!
 		# CAUTION: fileID might not be correct after upload!
 
@@ -81,17 +79,17 @@ class FileInformation(fs.FileInformation):
 				'Authorization': self.authorization,
 			})
 		req = urllib2.urlopen(reque)
-		return req
+		#return req
 
 class DirectoryInformation(fs.DirectoryInformation):
-	def __init__(self, folderid, authorization, path, parent, lastModified, size = None):
-		url_list = 'https://api.point.io/v2/folders/list.json'
-		url_create = 'https://api.point.io/v2/folders/create.json'
+	url_list = 'https://api.point.io/v2/folders/list.json'
+	url_create = 'https://api.point.io/v2/folders/create.json'
+	def __init__(self, folderid, authorization, path, parent = None, lastModified, size):
 		super(DirectoryInformation, self).__init__(path, lastModified, size, parent) 
 
-		# self.folderid = folderid
-		# self.authorization = authorization
-		# self.parent = parent
+		self.folderid = folderid
+		self.authorization = authorization
+		
 
 	def getFiles(self):
 		query_args = { 'folderId':self.folderid }
@@ -110,7 +108,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				lastModified = t + " GMT"
 				size = item[8]
 				fileid = item[0]
-				yield FileInformation(fullPath, lastModified, size, self.parent, self.authorization, self.folderid, fileid)
+				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid)
 
 	def getDirectories(self):
 		query_args = { 'folderId':self.folderid }
@@ -131,7 +129,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				lastModified = t + " GMT"
 				size = item[8]
 				fileid = item[0]
-				yield DirectoryInformation(self.folderid, self.authorization, path, parent)
+				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size)
 
 	def createDirectory(self, name):
 		query_args = { 'folderId':self.folderid, 'foldername':name }
@@ -142,6 +140,8 @@ class DirectoryInformation(fs.DirectoryInformation):
 			})
 		response = urllib2.urlopen(request)
 		path = path + "/" + name
+
+		#Get lastMod and size from response
 		return DirectoryInformation(self.folderid, self.authorization, path, self)		
 
 	def createFile(self, name, file):
@@ -153,9 +153,8 @@ class FileSystem(fs.FileSystem):
 	rootDir = '/'
 	folderid = None
 	authorization = None
-	parent = None
-	def __init__(self, folderid, authorization, parent):
+	def __init__(self, folderid, authorization):
 		self.folderid = folderid
 		self.authorization = authorization
 	def getRoot(self):
-		return DirectoryInformation(self.folderid, self.authorization, self.rootDir, self.parent)
+		return DirectoryInformation(self.folderid, self.authorization, self.rootDir, None, None, None)
