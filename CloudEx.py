@@ -1,5 +1,6 @@
 import os,sys
 import urllib,urllib2,requests
+import json
 
 class CloudEx:
 	"""CloudExtender Project in MHacks
@@ -11,6 +12,7 @@ class CloudEx:
 	# url = r"https://api.point.io/v2"
 	authorization = "FA35E8D7EA649C8B96F7B73E61D15D9BA5A944433BD29646993EAC04A8597C889B9E530C7FA11F766462A7FE5E8F3A1CF0E3DEDC681B7ABED7433AD78C5178C4"
 	siteTypeId = 0
+	shareId = "7A76179A-997B-466E-AB0844E7CB11B65C"
 	# def Auth(self):
 	# 	fullurl = self.url + r"/auth.json"
 	# 	paras = {
@@ -51,7 +53,32 @@ class CloudEx:
 		response = urllib2.urlopen(request)
 
 		return	response
-		  
+
+	def getMaxFileSize(self, authorization, shareId):
+		url = 'https://api.point.io/v2/folders/list.json'
+
+		query_args = { 'folderId':shareId }
+		 
+		# This urlencodes your data (that's why we need to import urllib at the top)
+		data = urllib.urlencode(query_args)
+		 
+		# Send HTTP POST request
+		request = urllib2.Request(url, data, 
+			headers = {
+				"Authorization": authorization
+			})
+		 
+		response = urllib2.urlopen(request)
+
+		r = response.readline()
+		py = json.loads(r)
+
+		size = 0
+		for item in py["RESULT"]["DATA"]:
+			size += item[8]
+
+		print size
+		return	size
 		# html = response.read()
 		 
 		# Print the result
