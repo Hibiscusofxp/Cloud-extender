@@ -16,12 +16,13 @@ class FileInformation(fs.FileInformation):
 	filename = None
 	fileid = None
 
-	def __init__(self, fullPath, lastModified, size, parent, authorization, folderid, fileid):
+	def __init__(self, fullPath, lastModified, size, parent, authorization, folderid, fileid, containerid):
 		super(FileInformation, self).__init__(fullPath, lastModified, size, parent)
 		self.authorization = authorization
 		self.filename = self.name
 		self.folderid = folderid
 		self.fileid = fileid
+		self.containerid = containerid
 
 	def download(self):
 		"""
@@ -29,8 +30,9 @@ class FileInformation(fs.FileInformation):
 		"""
 		paras = {
 			'folderid': self.folderid,
-			'filename': self.filename,
-			'fileid': self.fileid,
+			'filename': self.filename.encode('utf-8'),
+			'fileid': self.fileid.encode('utf-8'),
+			'containerid': self.containerid
 		}
 		paras = urllib.urlencode(paras)
 		reque = urllib2.Request(
@@ -58,6 +60,7 @@ class FileInformation(fs.FileInformation):
 			'filename': self.filename,
 			# if filename is different, a new file will be uploaded
 			'fileid': self.fileid,
+			'containerid': self.containerid,
 			'filecontents': filecontents
 		}
 		req = requests.post(
@@ -80,8 +83,9 @@ class FileInformation(fs.FileInformation):
 	def delete(self):
 		paras = {
 			'folderid': self.folderid,
-			'filename': self.filename,
-			'fileid': self.fileid,
+			'filename': self.filename.encode('utf-8'),
+			'fileid': self.fileid.encode('utf-8'),
+			'containerid': self.containerid
 		}
 		paras = urllib.urlencode(paras)
 		reque = urllib2.Request(
@@ -112,7 +116,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 		response = urllib2.urlopen(request)
 		r = response.readline()
 		py = json.loads(r)
-		print py
+
 		for item in py["RESULT"]["DATA"]:
 			if (item[2] != "DIR"):
 				fullPath = item[4] + item[1]
@@ -121,7 +125,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				size = item[8]
 				# fileid = item[0]
 				fileid = str(int(item[0]) if isinstance(item[0], float) else item[0])
-				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid)
+				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid, self.containerid)
 
 	def getDirectories(self):
 		query_args = { 'folderId': self.folderid, 'containerid': self.containerid }
@@ -147,7 +151,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid)
 
 	def createDirectory(self, name):
-		query_args = { 'folderId':self.folderid, 'foldername':name }
+		query_args = { 'folderId':self.folderid, 'foldername':name.encode('utf-8') }
 		data = urllib.urlencode(query_args)
 		request = urllib2.Request(self.url_create, data, 
 			headers = {
@@ -173,7 +177,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 
 	def createFile(self, name, file):
 		fnFull = os.path.join(self.fullPath, name)		
-		newFile = FileInformation(fnFull, "", 0, self.parent, self.authorization, self.folderid, name)
+		newFile = FileInformation(fnFull, "", 0, self.parent, self.authorization, self.folderid, name, self.containerid)
 		newFile.upload(file);
 		# CAUTION: fileid might not correct now!
 		# remaining: grab the fileid
