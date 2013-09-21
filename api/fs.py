@@ -37,10 +37,31 @@ class FileSystemInformation(object):
 		return self.fullPath
 
 class FileInformation(FileSystemInformation):
-	pass
+	def download(self):
+		raise NotImplementedError()
+
+	def upload(self, file):
+		raise NotImplementedError()
+
+	def delete(self):
+		raise NotImplementedError()
 
 class DirectoryInformation(FileSystemInformation):
-	pass
+	
+	def getFiles(self):
+		raise NotImplementedError()
+
+	def getDirectories(self):
+		raise NotImplementedError()
+
+	def delete(self):
+		raise NotImplementedError()
+
+	def createDirectory(self, name):
+		raise NotImplementedError()
+
+	def createFile(self, file):
+		raise NotImplementedError()
 
 class FileSystem:
 	"""
@@ -48,71 +69,13 @@ class FileSystem:
 	Defines base functions used by the API. Implement those that are needed
 	"""
 
-	def getFiles(self, path):
-		"""
-		Return a list or iterable of files under path
-		Each item in the list should be of type FileInformation
-		"""
-		raise NotImplementedError()
-
-	def getDirectories(self, path):
-		"""
-		Return a list or iterable of directories under path
-		Each item in the list should be of type DirectoryInformation
-		"""
-		raise NotImplementedError()
-
-	def getFileInfo(self, path):
-		"""
-		Return a single element of the file being pointed to by path
-		The single element should be of type FileInformation
-		"""
-		raise NotImplementedError()
-
 	def getMaxFileSize(self):
 		"""
 		Get the maximal file size that can be uploaded under the current file system
 		"""
 		return None
 
-	def downloadFile(self, path):
+	def getRoot(self):
 		"""
-		Download the file under path given by path, and return a file-like object (which at least provides .read(size) which reads into a str buffer)
-		"""
-		raise NotImplementedError()
-
-	def uploadFile(self, path, file):
-		"""
-		Upload the file-like object under file to the path given by path.
-		"""
-		raise NotImplementedError()
-
-	def createDirectory(self, path):
-		"""
-		Creates a directory under path
-		"""
-		raise NotImplementedError()
-
-	def fileExists(self, path):
-		"""
-		Checks if path exists as a file, and return a boolean value that indicates this state
-		"""
-		raise NotImplementedError()
-
-	def directoryExists(self, path):
-		"""
-		Checks if a path exists as a directory, and return a boolean value that indicates this state
-		"""
-		raise NotImplementedError()
-
-	def deleteDirectory(self, path):
-		"""
-		Delete the directory under path
-		"""
-		raise NotImplementedError()
-
-	def deleteFile(self, path):
-		"""
-		Delete the file under path
 		"""
 		raise NotImplementedError()
