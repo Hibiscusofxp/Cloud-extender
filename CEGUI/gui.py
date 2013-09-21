@@ -2,10 +2,10 @@ import wx
 import os
 
 class Example(wx.Frame):
-  
+
     def OnAbout(self,e):
         # Create a message dialog box
-        dlg = wx.MessageDialog(self, " A sample editor \n in wxPython", "About Sample Editor", wx.OK)
+        dlg = wx.MessageDialog(self, " Extends Clouds", "About Cloud Extender", wx.OK)
         dlg.ShowModal() # Shows it
         dlg.Destroy() # finally destroy it when finished.
 
@@ -14,18 +14,14 @@ class Example(wx.Frame):
 
     def OnOpen(self,e):
         """ Open a file"""
-        dlg = wx.FileDialog(self, "Choose a file", self.dirname, "", "*.*", wx.OPEN)
+        dlg = wx.FileDialog(self, "Choose a folder", self.dirname, "", "*.*", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
-            self.filename = dlg.GetFilename()
             self.dirname = dlg.GetDirectory()
-            f = open(os.path.join(self.dirname, self.filename), 'r')
-            self.control.SetValue(f.read())
-            f.close()
+            #pathBox.SetValue(self.dirname)
         dlg.Destroy()
   
     def __init__(self, parent, title):
-        super(Example, self).__init__(parent, title=title, 
-            size=(500, 400))
+        super(Example, self).__init__(parent, title=title, size=(500, 400), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
         self.CreateStatusBar() # A Statusbar in the bottom of the window
         self.dirname=''    
         self.Centre()
@@ -41,12 +37,15 @@ class Example(wx.Frame):
         self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
 
         self.sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        button1 = wx.Button(self, id=-1, label="&...", pos=(150, 150), size=(100, 30))
-        self.sizer2.Add(button1, 1, wx.EXPAND)
+        workingdirectoryLabel = wx.StaticText(self, id=-1, label="&Location:", pos=(50, 255), size=(60, 30))
+        pathBox = wx.TextCtrl(self, id=-1, value="path", pos=(120, 250), size=(250, 30))
+        browseButton = wx.Button(self, id=-1, label="&...", pos=(375, 250), size=(35, 30))
+        self.sizer2.Add(workingdirectoryLabel, 1, wx.EXPAND)
+        self.sizer2.Add(pathBox, 1, wx.EXPAND)
+        self.sizer2.Add(browseButton, 1, wx.EXPAND)
 
         # Use some sizers to see layout options
         self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.sizer2, 0, wx.EXPAND)
 
         #Layout sizers
         self.SetSizer(self.sizer)
@@ -54,7 +53,7 @@ class Example(wx.Frame):
         self.Show()
         
         # Events.
-        self.Bind(wx.EVT_BUTTON, self.OnOpen, button1)
+        self.Bind(wx.EVT_BUTTON, self.OnOpen, browseButton)
         self.Bind(wx.EVT_MENU, self.OnExit, menuExit)
         self.Bind(wx.EVT_MENU, self.OnAbout, menuAbout)
 
