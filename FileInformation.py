@@ -4,6 +4,7 @@ import os.path
 import stat
 import datetime
 import shutil
+import urllib, urllib2, json, requests
 
 class FileInformation(fs.FileInformation):
 	authorization = None
@@ -11,15 +12,15 @@ class FileInformation(fs.FileInformation):
 	filename = None
 	fileid = None
 
-	def __init__(self, fullPath, lastModified, size, parent, parent, authorization, folderid, fileid):
+	def __init__(self, fullPath, lastModified, size, parent, authorization, folderid, fileid):
 		self.fullPath = fullPath
 		self.lastModified = lastModified
 		self.size = size
 		self.parent = parent
 		self.authorization = authorization
 		self.filename = self.name
-		stats = os.stat(path)
-		super(FileInformation, self).__init__(path, datetime.datetime.fromtimestamp(stats[stat.ST_CTIME]), stats[stat.ST_SIZE], parent)
+		self.folderid = folderid
+		self.fileid = fileid
 
 	def download(self):
 		"""
@@ -34,33 +35,49 @@ class FileInformation(fs.FileInformation):
 		reque = urllib2.Request(
 			"https://api.point.io/v2/folders/files/download.json?"+paras,
 			headers={
-				'Authorization': authorization,
+				'Authorization': self.authorization,
 			})
 		req = urllib2.urlopen(reque)
-		return req
+		res = req.readlines()
+		res = json.loads(res[0])
+		resURL = res['RESULT']
+		resFile = urllib.urlopen(resURL)
+		return resFile
 		#example: result = cld.DownloadFile(cld.sessionkey, r"64B367EA-286D-481F-92DD9E28E9B3B4C1", "JustATest.txt", "10529642791")
 
 	def upload(self, file):
-		files = {'file': open(pathAndFilename, 'rb')}
+		files = {'file': file}
 		#folderid = folderidVal
 		#filename = filenamjson.loads
-		fileid = filename
+		# newfileid = self.filename
 		filecontents = files
 		data = {
-			'folderid': folderid,
-			'filename': filename,
-			'fileid': fileid,
+			'folderid': self.folderid,
+			'filename': self.filename,
+			'fileid': self.fileid,
 			'filecontents': filecontents
 		}
-		req = requests.post(self.url+'/folders/files/upload.json',
-			headers= {'Authorization': authorization},
+		req = requests.post(
+			"https://api.point.io/v2/folders/files/upload.json",
+			headers= {'Authorization': self.authorization},
 			files = files,
 			data = data
 		)
 		return req
-		
-		with open(self.fullPath, 'wb') as ofile:
-			shutil.copyfileobj(file, ofile)
+		# no further upload or delete!
+		# CAUTION: fileID might not be correct after upload!
 
 	def delete(self):
-		os.remove(self.fullPath)
+		paras = {
+			'folderid': self.folderid,
+			'filename': self.filename,
+			'fileid': self.fileid,
+		}
+		paras = urllib.urlencode(paras)
+		reque = urllib2.Request(
+			"https://api.point.io/v2/folders/files/delete.json?"+paras,
+			headers={
+				'Authorization': self.authorization,
+			})
+		req = urllib2.urlopen(reque)
+		return req
