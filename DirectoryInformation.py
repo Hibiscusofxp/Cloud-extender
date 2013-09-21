@@ -140,7 +140,19 @@ class DirectoryInformation(fs.DirectoryInformation):
 			})
 		response = urllib2.urlopen(request)
 		path = path + "/" + name
-
+		# list the files
+		query_args = { 'folderId':self.folderid }
+		data = urllib.urlencode(query_args)
+		request = urllib2.Request(self.url_list, data, 
+			headers = {
+				"Authorization": self.authorization
+			})
+		response = urllib2.urlopen(request)
+		r = response.readline()
+		py = json.loads(r)
+		for item in py["RESULT"]["DATA"]:
+			if (item[1] == name)
+				containerid = item[3]
 		#Get lastMod and size from response
 		return DirectoryInformation(self.folderid, self.authorization, path, self, lastModified, size, containerid)		
 
