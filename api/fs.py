@@ -126,7 +126,7 @@ class DirectoryInformation(FileSystemInformation):
 		"""
 		raise NotImplementedError()
 
-	def createFile(self, file):
+	def createFile(self, name, file):
 		"""
 		Create a new file and load it with the data in file.
 
