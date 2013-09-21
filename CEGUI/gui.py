@@ -1,18 +1,21 @@
-import wx
-import json
+import wx, json
+import CloudEx as CE
 
 class Example(wx.Frame):
 
+    #Function runs on the event of when about menu button is clicked
     def OnAbout(self,e):
         # Create a message dialog box
         dlg = wx.MessageDialog(self, " Extends Clouds", "About Cloud Extender", wx.OK)
         dlg.ShowModal() # Shows it
         dlg.Destroy() # finally destroy it when finished.
 
+    ##Function runs when GUI is closed
     def OnExit(self,e):
         self.SaveSettings()
         self.Destroy()  # Close the frame.
 
+    #Function runs on the event of when the browse button is clicked
     def OnOpen(self,e):
         dlg = wx.DirDialog(self, message= "Choose a folder")
         if dlg.ShowModal() == wx.ID_OK:
@@ -20,12 +23,14 @@ class Example(wx.Frame):
             self.pathBox.SetValue(self.dirname)
         dlg.Destroy()
         
+    #Function caches data for another session in data.dat
     def SaveSettings(self):
         f = open('data.dat', 'w')
         j = json.dumps({'path': self.pathBox.GetValue(), 'email': self.emailBox.GetValue(), 'password': self.passwordBox.GetValue(), 'apikey': self.apikeyBox.GetValue()})
         f.write(j)
         f.close()
         
+    #Function reads in cached data if it exists
     def readSettings(self):
         try:
             f = open('data.dat', 'r')
@@ -39,14 +44,16 @@ class Example(wx.Frame):
         except:
             return
         
-    def OnSubmit(self):
+    #Runs when submit button is clicked
+    def OnSubmit(self, cloud):
         j = json.dumps({'path': self.pathBox.GetValue(), 'email': self.emailBox.GetValue(), 'password': self.passwordBox.GetValue(), 'apikey': self.apikeyBox.GetValue()})
-        #send j
-        #if isSuccessful:
+        #send j for Authorization
+        #Authresp = cloud.Auth()
+        #if Authresp['ERROR'] == 0:
             #runsynccode
         #else:
             #wx.MessageBox('Bad Login', 'Error', wx.OK | wx.ICON_INFORMATION)
-        return
+        #return
         
     def __init__(self, parent, title):
         super(Example, self).__init__(parent, title=title, size=(500, 400), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
@@ -77,6 +84,8 @@ class Example(wx.Frame):
         self.pathBox = wx.TextCtrl(self, id=-1, pos=(120, 250), size=(250, 30))
         browseButton = wx.Button(self, id=-1, label="&...", pos=(375, 250), size=(35, 30))
         submitButton = wx.Button(self, id=-1, label="&Login", pos=(225, 135), size=(60, 30))
+        sizeusedLabel = wx.StaticText(self, id=-1, pos=(10, 290), size=(60, 20))
+        sizedleftLabel = wx.StaticText(self, id=-1, pos=(100, 290), size=(60, 20))
         
         #Adds controls to sizer
         self.sizer2.Add(emailLabel, 1, wx.EXPAND)
@@ -89,9 +98,19 @@ class Example(wx.Frame):
         self.sizer2.Add(self.pathBox, 1, wx.EXPAND)
         self.sizer2.Add(browseButton, 1, wx.EXPAND)
         self.sizer2.Add(submitButton, 1, wx.EXPAND)
+        self.sizer2.Add(sizeusedLabel , 1, wx.EXPAND)
+        self.sizer2.Add(sizedleftLabel, 1, wx.EXPAND)
 
+        #Instantiate CloudEx class
+        cloud = CE.CloudEx()
+        
+        #Get previous data if any
         self.readSettings()
-
+        
+        #Set usage details
+        #sizeusedLabel.SetLabel(str( "%.2f" % (cloud.getMaxFileSize(cloud.authorization,cloud.shareId)/1000000) )+"GB/")
+        sizedleftLabel.SetLabel("GB")
+        
         # Use some sizers to see layout options
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -105,7 +124,7 @@ class Example(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExit, menuExit)
         self.Bind(wx.EVT_CLOSE, self.OnExit)
         self.Bind(wx.EVT_MENU, self.OnAbout, menuAbout)
-        self.Bind(wx.EVT_BUTTON, self.OnSubmit, submitButton)
+        self.Bind(wx.EVT_BUTTON, self.OnSubmit(cloud), submitButton)
 
 if __name__ == '__main__':
   
