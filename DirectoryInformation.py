@@ -6,6 +6,7 @@ import datetime
 import shutil
 import urllib,urllib2,requests
 import json
+import yaml
 
 class FileInformation(fs.FileInformation):
 	authorization = None
@@ -89,10 +90,11 @@ class DirectoryInformation(fs.DirectoryInformation):
 
 		self.folderid = folderid
 		self.authorization = authorization
+		self.containerid = containerid
 		
 
 	def getFiles(self):
-		query_args = { 'folderId':self.folderid }
+		query_args = { 'folderId':self.folderid, 'containerid': self.containerid  }
 		data = urllib.urlencode(query_args)
 		request = urllib2.Request(self.url_list, data, 
 			headers = {
@@ -111,7 +113,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid)
 
 	def getDirectories(self):
-		query_args = { 'folderId':self.folderid }
+		query_args = { 'folderId': self.folderid, 'containerid': self.containerid }
 		data = urllib.urlencode(query_args)
 		request = urllib2.Request(self.url_list, data, 
 			headers = {
@@ -129,7 +131,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				lastModified = t + " GMT"
 				size = item[8]
 				fileid = item[0]
-				containerid = item[3]			
+				containerid = int(item[3]) if isinstance(item[3], float) else item[3]
 				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid)
 
 	def createDirectory(self, name):
@@ -153,7 +155,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 		py = json.loads(r)
 		for item in py["RESULT"]["DATA"]:
 			if (item[1] == name):
-				containerid = item[3]
+				containerid = int(item[3]) if isinstance(item[3], float) else item[3]
 		#Get lastMod and size from response
 		return DirectoryInformation(self.folderid, self.authorization, path, self, lastModified, size, containerid)		
 
