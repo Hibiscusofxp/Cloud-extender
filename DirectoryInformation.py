@@ -1,47 +1,69 @@
-import os,sys
-import urllib,urllib2,requests
-import json
+from .api import fs
+import os
+import os.path
+import stat
+import datetime
+import shutil
 
-class DirectoryInformation(FileSystemInformation):
-	"""
-	Directory Information and directory listing wrapper.
-	"""
+class DirectoryInformation(fs.DirectoryInformation):
+	folderid = None
+	authorization = None
+	parent = None
+	def __init__(self, folderid, authorization, parent):
+		url_list = 'https://api.point.io/v2/folders/list.json'
+		self.folderid = folderid
+		self.authorization = authorization
+		self.parent = parent
+		# stats = os.stat(path)
+		# super(DirectoryInformation, self).__init__(path, datetime.datetime.fromtimestamp(stats[stat.ST_CTIME]), stats[stat.ST_SIZE], parent)
+		#
 	def getFiles(self):
-		"""
-		Get files under this directory, in the form of a enumerable list of FileInformation
-
-		@return enumerable of FileInformation
-		"""
-		raise NotImplementedError()
-
+		query_args = { 'folderId':folderid }
+		data = urllib.urlencode(query_args)
+		request = urllib2.Request(self.url, data, 
+			headers = {
+				"Authorization": self.authorization
+			})
+		response = urllib2.urlopen(request)
+		r = response.readline()
+		py = json.loads(r)
+		for item in py["RESULT"]["DATA"]:
+			if (item[2] != "DIR")
+				fullPath = item[1] + item[4]
+				lastModified = item[7]
+				size = item[8]
+				fileid = item[0]
+				yield FileInformation(fullPath, lastModified, size, self.parent, self.authorization, self.folderid, fileid)
+		# for fn in os.listdir(unicode(self.fullPath)):
+		# 	fnFull = os.path.join(self.fullPath, fn)
+		# 	if os.path.isfile(fnFull):
+		# 		# yield FileInformation(fnFull, self)
 	def getDirectories(self):
-		"""
-		Get directories under this directory, in the form of a enumerable list of DirectoryInformation\
-
-		@return enumerable of DirectoryInformation
-		"""
-		raise NotImplementedError()
-
-	def delete(self):
-		"""
-		Delete this directory
-		"""
-		raise NotImplementedError()
+		query_args = { 'folderId':folderid }
+		data = urllib.urlencode(query_args)
+		request = urllib2.Request(self.url, data, 
+			headers = {
+				"Authorization": self.authorization
+			})
+		response = urllib2.urlopen(request)
+		r = response.readline()
+		py = json.loads(r)
+		# folderid, authorization, parent
+		for item in py["RESULT"]["DATA"]:
+			if (item[2] == "DIR")
+				fullPath = item[1] + item[4]
+				lastModified = item[7]
+				size = item[8]
+				fileid = item[0]
+				yield DirectoryInformation(self.folderid, self.authorization, self)
+	# def delete(self):
+		# os.remove(self.fullPath)
 
 	def createDirectory(self, name):
-		"""
-		Create a directory under the current directory. 
-
-		@param the name of the new directory. Technically, there shouldn't be slashes or backslashes in the name
-		@return the newly created directory in the format of a DirectoryInformation
-		"""
-		raise NotImplementedError()
+		os.mkdir(os.path.join(self.fullPath,name))
+		return DirectoryInformation(os.path.join(self.fullPath, name), self)
 
 	def createFile(self, name, file):
-		"""
-		Create a new file and load it with the data in file.
-
-		@param  file the file-like object that holds the contents of the new file to be created
-		@return the newly uploaded FileInformation
-		"""
-		raise NotImplementedError()
+		fnFull = os.path.join(self.fullPath, name)
+		shutil.copyfileobj(file, open(fnFull, 'wb'))
+		return FileInformation(fnFull, self)
