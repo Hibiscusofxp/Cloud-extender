@@ -1,4 +1,4 @@
-import fs #
+from .api import fs
 import os
 import os.path
 import stat
@@ -84,7 +84,7 @@ class FileInformation(fs.FileInformation):
 class DirectoryInformation(fs.DirectoryInformation):
 	url_list = 'https://api.point.io/v2/folders/list.json'
 	url_create = 'https://api.point.io/v2/folders/create.json'
-	def __init__(self, folderid, authorization, path, parent = None, lastModified, size):
+	def __init__(self, folderid, authorization, path, parent = None, lastModified = None, size = None):
 		super(DirectoryInformation, self).__init__(path, lastModified, size, parent) 
 
 		self.folderid = folderid
