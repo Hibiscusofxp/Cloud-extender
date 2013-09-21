@@ -7,6 +7,7 @@ import os
 import os.path
 
 import shutil
+import time
 
 def loadDirDict(dir, dct):
 	size = dir.size or 0
@@ -91,8 +92,6 @@ class MultiSynchronizer:
 					print obj.lastModified, targetFound.lastModified
 					uploads[path] = (obj, targetFound, listFound)
 
-		print uploads
-
 		print "Downloading"
 		for path, obj in downloads.iteritems():
 			print "Downloading %s" % (path,)
@@ -100,18 +99,27 @@ class MultiSynchronizer:
 			dlObj = obj.download()
 			if path in localList:
 				localList[path].upload(dlObj)
+				newObj = localList[path]
 			else:
-				localList[os.path.dirname(path)].createFile(os.path.basename(path), dlObj)
+				newObj = localList[os.path.dirname(path)].createFile(os.path.basename(path), dlObj)
+
+			mtime = time.mktime(obj.lastModified.timetuple())
+			os.utime(newObj.fullPath, (mtime, mtime))
 
 
 		print "Uploading"
 		for path, obj in uploads.iteritems():
 			print "Uploading %s" % (path,)
 			obj, remoteObj, remoteList = obj
+
 			if remoteObj:
 				remoteObj.upload(obj.download())
+				newObj = remoteObj
 			else:
 				remoteList = remoteLists[getSortedDictList(remoteSizes)[0]['index']]
-				makedirs(localList, os.path.dirname(path))
-				remoteList[os.path.dirname(path)].createFile(os.path.basename(path), obj.download())
+				makedirs(remoteList, os.path.dirname(path))
+				newObj = remoteList[os.path.dirname(path)].createFile(os.path.basename(path), obj.download())
+
+			mtime = time.mktime(newObj.lastModified.timetuple())
+			os.utime(obj.fullPath, (mtime, mtime))
 
