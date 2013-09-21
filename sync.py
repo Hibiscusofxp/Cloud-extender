@@ -24,7 +24,7 @@ def loadDirDict(dir, dct):
 def loadFSDict(fs):
 	dct = {}
 	totalSize = loadDirDict(fs.getRoot(), dct)
-	return dct, size
+	return dct, totalSize
 
 def makedirs(dct, path):
 	parts = path.split('/')
@@ -33,6 +33,13 @@ def makedirs(dct, path):
 		if not partial in dct:
 			newDir = dct['/'.join(parts[0:i-1])].createDirectory(parts[i-1])
 			dct[partial] = newDir
+
+def getSortedDictList(list):
+	pairedDict = []
+	for i in range(0,len(list)):
+		pairedDict.append({'index': i, 'value': list[i]})
+
+	return sorted(pairedDict, key=lambda x: x['value'])
 
 class MultiSynchronizer:
 	local = None
@@ -81,14 +88,17 @@ class MultiSynchronizer:
 				if not targetFound:
 					uploads[path] = (obj, None, None)
 				elif obj.lastModified > targetFound.lastModified:
+					print obj.lastModified, targetFound.lastModified
 					uploads[path] = (obj, targetFound, listFound)
+
+		print uploads
 
 		print "Downloading"
 		for path, obj in downloads.iteritems():
 			print "Downloading %s" % (path,)
 			makedirs(localList, os.path.dirname(path))
 			dlObj = obj.download()
-			if localList[path]:
+			if path in localList:
 				localList[path].upload(dlObj)
 			else:
 				localList[os.path.dirname(path)].createFile(os.path.basename(path), dlObj)
@@ -101,6 +111,7 @@ class MultiSynchronizer:
 			if remoteObj:
 				remoteObj.upload(obj.download())
 			else:
-				for i in range(0, len(remoteSizes)):
-					
+				remoteList = remoteLists[getSortedDictList(remoteSizes)[0]['index']]
+				makedirs(localList, os.path.dirname(path))
+				remoteList[os.path.dirname(path)].createFile(os.path.basename(path), obj.download())
 

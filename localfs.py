@@ -16,6 +16,8 @@ class FileInformation(fs.FileInformation):
 	def upload(self, file):
 		with open(self.fullPath, 'wb') as ofile:
 			shutil.copyfileobj(file, ofile)
+			file.close()
+		os.utime(self.fullPath,None)
 
 	def delete(self):
 		os.remove(self.fullPath)
@@ -48,6 +50,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 	def createFile(self, name, file):
 		fnFull = os.path.join(self.fullPath, name)
 		shutil.copyfileobj(file, open(fnFull, 'wb'))
+		file.close()
 		return FileInformation(fnFull, self)
 
 

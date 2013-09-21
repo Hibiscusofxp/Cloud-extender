@@ -64,8 +64,12 @@ class FileSystemInformation(object):
 
 	def getRelativePath(self, rootElement = None):
 		if self == rootElement or self.parent == None:
+			return ''
+		par = self.parent.getRelativePath(rootElement)
+		if par:
+			return par + '/' + self.name
+		else:
 			return self.name
-		return self.parent.getRelativePath(rootElement) + '/' + self.name
 
 class FileInformation(FileSystemInformation):
 	"""
