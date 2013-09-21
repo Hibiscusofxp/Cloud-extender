@@ -151,7 +151,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 		r = response.readline()
 		py = json.loads(r)
 		for item in py["RESULT"]["DATA"]:
-			if (item[1] == name)
+			if (item[1] == name):
 				containerid = item[3]
 		#Get lastMod and size from response
 		return DirectoryInformation(self.folderid, self.authorization, path, self, lastModified, size, containerid)		
