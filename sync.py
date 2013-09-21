@@ -9,6 +9,8 @@ import os.path
 import shutil
 import time
 
+from . import config
+
 def loadDirDict(dir, dct):
 	size = dir.size or 0
 
@@ -42,6 +44,12 @@ def getSortedDictList(list):
 
 	return sorted(pairedDict, key=lambda x: x['value'])
 
+def getIndexDictionary(list):
+	output = {}
+	for i in range(0, len(list)):
+		output[id(list[i])] = i
+	return output
+
 class MultiSynchronizer:
 	local = None
 	remotes = []
@@ -63,6 +71,10 @@ class MultiSynchronizer:
 			lst, sz = loadFSDict(remote)
 			remoteLists.append(lst)
 			remoteSizes.append(sz)
+
+
+		if config.FILE_DISTRIBUTION_MODE == 1:
+			remoteListLookup = getIndexDictionary(remoteLists)
 
 		downloads = {}
 		uploads = {}
@@ -113,11 +125,18 @@ class MultiSynchronizer:
 			obj, remoteObj, remoteList = obj
 
 			if remoteObj:
+				if config.FILE_DISTRIBUTION_MODE == 1:
+					remoteSizes[remoteListLookup[id(remoteList)]] += obj.size - remoteObj.size
+
 				remoteObj.upload(obj.download())
 				newObj = remoteObj
 			else:
 				remoteList = remoteLists[getSortedDictList(remoteSizes)[0]['index']]
 				makedirs(remoteList, os.path.dirname(path))
+
+				if config.FILE_DISTRIBUTION_MODE == 1:
+					remoteSizes[remoteListLookup[id(remoteList)]] += obj.size
+
 				newObj = remoteList[os.path.dirname(path)].createFile(os.path.basename(path), obj.download())
 
 			mtime = time.mktime(newObj.lastModified.timetuple())
