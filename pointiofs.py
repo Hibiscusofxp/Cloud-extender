@@ -134,8 +134,6 @@ class DirectoryInformation(fs.DirectoryInformation):
 		
 		py = res.json()
 
-		print py
-
 		for item in py["RESULT"]["DATA"]:
 			if (item[2] != "DIR"):
 				fullPath = item[4] + item[1]
@@ -169,26 +167,31 @@ class DirectoryInformation(fs.DirectoryInformation):
 				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid).setSession(self.session)
 
 	def createDirectory(self, name):
-		query_args = { 'folderId':self.folderid, 'foldername':name }
+		query_args = { 'folderId':self.folderid, 'foldername':name, 'containerid': self.containerid }
 		res = self.session.post(self.url_create, data = query_args, 
 			headers = {
 				"Authorization": self.authorization
 			})
+
 		res.close()
 
 		path = self.fullPath + "/" + name
 		# list the files
-		query_args = { 'folderId':self.folderid.encode('utf-8') }
+		query_args = { 'folderId':self.folderid.encode('utf-8'), 'containerid': self.containerid }
 		data = urllib.urlencode(query_args)
 		res = self.session.get(self.url_list + "?" + data, 
 			headers = {
 				"Authorization": self.authorization
 			})
 		
+		containerid = None
 		py = res.json()
 		for item in py["RESULT"]["DATA"]:
 			if (item[1] == name):
 				containerid = unicode(int(item[3]) if isinstance(item[3], float) else item[3])
+
+		assert(containerid != None)
+
 		#Get lastMod and size from response
 		return DirectoryInformation(self.folderid, self.authorization, path, self, None, None, containerid).setSession(self.session)	
 
