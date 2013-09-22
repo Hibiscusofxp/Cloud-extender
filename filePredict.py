@@ -20,11 +20,13 @@ class Ohnoauth():
         self.STORAGEDATALOCATION = 'cloudextender/m2.csv'
         self.SLEEP_TIME = 10
 
-        flow = OAuth2WebServerFlow(self.CLIENT_ID, self.CLIENT_SECRET, self.OAUTH_SCOPE, self.REDIRECT_URI)
-        authorize_url = flow.step1_get_authorize_url()
-        print 'Go to the following link in your browser: ' + authorize_url
-        code = raw_input('Enter verification code: ').strip()
-        credentials = flow.step2_exchange(code)
+    def getAuthorizeURL(self):
+        self.flow = OAuth2WebServerFlow(self.CLIENT_ID, self.CLIENT_SECRET, self.OAUTH_SCOPE, self.REDIRECT_URI)
+        authorize_url = self.flow.step1_get_authorize_url()
+        return authorize_url
+
+    def auth(self, code):
+        credentials = self.flow.step2_exchange(code)
 
         # Create an httplib2.Http object and authorize it with our credentials
         http = httplib2.Http()
