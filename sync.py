@@ -64,13 +64,39 @@ class MultiSynchronizer:
 
 	prophet = None
 
+	recentSizes = None
+
 	storageTypeTranslation = {"box": 15, "drive": 19, "dropbox": 11}
+
+	message = None
+	progress = None
+
+	progressCallback = None
 
 	def setProphet(self,prophet):
 		self.prophet = prophet
 
+	def getSizes(self):
+		if not self.recentSizes:
+			return None
+		return dict(zip([r.storageTypeID for r in self.remotes], recentSizes))
+
+	def updateProgress(self, message, progress = None):
+		print message
+		self.message = message
+		self.progress = progress
+
+		if self.progressCallback:
+			try:
+				self.progressCallback()
+			except:
+				pass
+
+	def setProgressCallback(self, cb):
+		self.progressCallback = cb
+
 	def synchronize(self, deletefiles = None):
-		print "Loading remote file lists"
+		self.updateProgress("Loading file lists")
 
 		q = Queue.Queue()
 		results = []
@@ -89,8 +115,6 @@ class MultiSynchronizer:
 		for remote in self.remotes:
 			q.put(remote)
 
-
-		print "Loading local file list"
 		localList, localSize = loadFSDict(self.local)
 
 		q.join()
@@ -109,7 +133,7 @@ class MultiSynchronizer:
 		uploads = {}
 		deletions = []
 
-		print "Resolving changes"
+		self.updateProgress("Resolving changes")
 
 		for remoteList in remoteLists:
 			for path, obj in remoteList.iteritems():
@@ -142,9 +166,11 @@ class MultiSynchronizer:
 					if path in remoteList:
 						deletions.append(remoteList[path])
 
-		print "Downloading"
+		self.updateProgress("Downloading")
+		counter = 0
 		for path, obj in downloads.iteritems():
-			print "Downloading %s" % (path,)
+			counter += 1
+			self.updateProgress("Downloading %s" % (path,), float(counter) / len(downloads) * 100)
 			makedirs(localList, os.path.dirname(path))
 			dlObj = obj.download()
 			if path in localList:
@@ -157,10 +183,12 @@ class MultiSynchronizer:
 			os.utime(newObj.fullPath, (mtime, mtime))
 
 
-		print "Uploading"
+		self.updateProgress("Uploading")
+		counter = 0
 		for path, obj in uploads.iteritems():
+			counter += 1
 			try:
-				print "Uploading %s" % (path,)
+				self.updateProgress("Uploading %s" % (path,), float(counter) / len(uploads) * 100)
 				obj, remoteObj, remoteList = obj
 
 				if remoteObj:
@@ -214,8 +242,10 @@ class MultiSynchronizer:
 				os.utime(obj.fullPath, (mtime, mtime))
 			except Exception as ex:
 				print u"Failed: " + unicode(ex)
-		print "Deleting"
+		self.updateProgress("Deleting")
 
 		for obj in deletions:
-			print "Deleting %s" % (obj.fullPath)
+			self.updateProgress("Deleting %s" % (obj.fullPath))
 			obj.delete()
+
+		self.recentSizes = remoteSizes
