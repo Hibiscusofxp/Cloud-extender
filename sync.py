@@ -249,3 +249,4 @@ class MultiSynchronizer:
 			obj.delete()
 
 		self.recentSizes = remoteSizes
+		self.updateProgress("", 100);

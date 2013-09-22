@@ -38,7 +38,7 @@ class Example(wx.Frame):
         self.Destroy()  # Close the frame.
 
     def OnInfo(self,e):
-        InfoDialog = InfoDia(None, 'Info', 20.55, 50, 20, 100)
+        InfoDialog = InfoDia(None, 'Info', 10, 5, 5, 80)
         InfoDialog.ShowModal()
         InfoDialog.Destroy()
 
@@ -101,9 +101,6 @@ class Example(wx.Frame):
                 self.gauge.Show()      
                 self.gauge.SetValue(0)
                 
-                self.monitor = monitor.Monitor(self.sessionkey, self.pathBox.GetValue())
-                self.monitor.start()
-                self.monitor.setProphet(self.fp)
                 self.gauge.SetValue(50)
                 dialog.browser.LoadURL(self.fp.getAuthorizeURL())
                 self.gauge.Pulse()
@@ -128,9 +125,22 @@ class Example(wx.Frame):
         self.gauge.Pulse()
         self.fp.auth(self.oauthBox.GetValue())
         
+        self.monitor = monitor.Monitor(self.sessionkey, self.pathBox.GetValue())
+        self.monitor.start()
+        self.monitor.setProphet(self.fp)
+        self.monitor.sync.setProgressCallback(self.OnSyncUpdate)
+
         self.gauge.Pulse()
         self.gauge.SetValue(100)
+
+        self.monitor.synchronize(True)
         return
+
+    def OnSyncUpdate(self):
+        if self.monitor.sync.progress:
+            self.gauge.SetValue(self.monitor.sync.progress)
+        else:
+            self.gauge.Pulse()
         
         
     def __init__(self, parent, title):
