@@ -1,5 +1,5 @@
 import wx, json
-import sync, sys, os, urllib
+import sys, os, urllib
 import wx.lib.agw.pygauge as PG
 
 class Example(wx.Frame):
@@ -105,38 +105,42 @@ class Example(wx.Frame):
         menuBar.Append(filemenu,"&File") # Adding the "filemenu" to the MenuBar
         self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
 
-        # loginpnl = wx.Panel(self, -1)
-        self.sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        loginpnl = wx.Panel(self, -1)
+        # self.sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         #Creates controls
-        emailLabel = wx.StaticText(self, id=-1, label="&Email:", pos=(100, 50), size=(60, 30))
-        self.emailBox = wx.TextCtrl(self, id=-1, pos=(145, 45), size=(250, 25))
-        passwordLabel = wx.StaticText(self, id=-1, label="&Password:", pos=(75, 80), size=(65, 30))
-        self.passwordBox = wx.TextCtrl(self, id=-1, style= wx.TE_PASSWORD , pos=(145, 75), size=(250, 25))
-        apikeyLabel = wx.StaticText(self, id=-1, label="&API Key:", pos=(87, 110), size=(60, 30))
-        self.apikeyBox = wx.TextCtrl(self, id=-1, pos=(145, 105), size=(250, 25))
-        locationLabel = wx.StaticText(self, id=-1, label="&Location:", pos=(50, 255), size=(60, 30))
-        self.pathBox = wx.TextCtrl(self, id=-1, pos=(120, 250), size=(250, 30))
-        browseButton = wx.Button(self, id=-1, label="&...", pos=(375, 250), size=(35, 30))
-        submitButton = wx.Button(self, id=-1, label="&Login", pos=(225, 135), size=(60, 30))
-        sizeusedLabel = wx.StaticText(self, id=-1, pos=(10, 290), size=(60, 20))
-        sizedleftLabel = wx.StaticText(self, id=-1, pos=(100, 290), size=(60, 20))
+        #oliver
+        emailLabel = wx.StaticText(self, id=-1, label="&Email:", pos=(100, 80), size=(60, 30))
+        self.emailBox = wx.TextCtrl(self, id=-1, pos=(145, 75), size=(250, 25))
+        passwordLabel = wx.StaticText(self, id=-1, label="&Password:", pos=(75, 110), size=(65, 30))
+        self.passwordBox = wx.TextCtrl(self, id=-1, style= wx.TE_PASSWORD , pos=(145, 105), size=(250, 25))
+        apikeyLabel = wx.StaticText(self, id=-1, label="&API Key:", pos=(87, 140), size=(60, 30))
+        self.apikeyBox = wx.TextCtrl(self, id=-1, pos=(145, 135), size=(250, 25))
+        locationLabel = wx.StaticText(self, id=-1, label="&Location:", pos=(50, 285), size=(60, 30))
+        self.pathBox = wx.TextCtrl(self, id=-1, pos=(120, 280), size=(250, 30))
+        browseButton = wx.Button(self, id=-1, label="&...", pos=(375, 280), size=(35, 30))
+        submitButton = wx.Button(self, id=-1, label="&Login", pos=(225, 165), size=(60, 30))
+        sizeusedLabel = wx.StaticText(self, id=-1, pos=(10, 310), size=(60, 20))
+        sizedleftLabel = wx.StaticText(self, id=-1, pos=(100, 310), size=(60, 20))
         
+        png = wx.Image('Cloud.png', wx.BITMAP_TYPE_ANY).ConvertToBitmap()
+        self.image = wx.StaticBitmap(self, -1, png, (0,0), (png.GetWidth(), png.GetHeight()))
+
         #Changes background to white
-        self.SetBackgroundColour('f0f0f0')
+        self.SetBackgroundColour('#ffffff') #oliver
         
-        #Adds controls to sizer
-        self.sizer2.Add(emailLabel, 1, wx.EXPAND)
-        self.sizer2.Add(self.emailBox, 1, wx.EXPAND)
-        self.sizer2.Add(passwordLabel, 1, wx.EXPAND)
-        self.sizer2.Add(self.passwordBox, 1, wx.EXPAND)
-        self.sizer2.Add(apikeyLabel, 1, wx.EXPAND)
-        self.sizer2.Add(self.apikeyBox, 1, wx.EXPAND)
-        self.sizer2.Add(locationLabel, 1, wx.EXPAND)
-        self.sizer2.Add(self.pathBox, 1, wx.EXPAND)
-        self.sizer2.Add(browseButton, 1, wx.EXPAND)
-        self.sizer2.Add(submitButton, 1, wx.EXPAND)
-        self.sizer2.Add(sizeusedLabel , 1, wx.EXPAND)
-        self.sizer2.Add(sizedleftLabel, 1, wx.EXPAND)
+        # #Adds controls to sizer
+        # self.sizer2.Add(emailLabel, 1, wx.EXPAND)
+        # self.sizer2.Add(self.emailBox, 1, wx.EXPAND)
+        # self.sizer2.Add(passwordLabel, 1, wx.EXPAND)
+        # self.sizer2.Add(self.passwordBox, 1, wx.EXPAND)
+        # self.sizer2.Add(apikeyLabel, 1, wx.EXPAND)
+        # self.sizer2.Add(self.apikeyBox, 1, wx.EXPAND)
+        # self.sizer2.Add(locationLabel, 1, wx.EXPAND)
+        # self.sizer2.Add(self.pathBox, 1, wx.EXPAND)
+        # self.sizer2.Add(browseButton, 1, wx.EXPAND)
+        # self.sizer2.Add(submitButton, 1, wx.EXPAND)
+        # self.sizer2.Add(sizeusedLabel , 1, wx.EXPAND)
+        # self.sizer2.Add(sizedleftLabel, 1, wx.EXPAND)
         
         #Get previous data if any
         self.readSettings()
