@@ -62,6 +62,13 @@ class MultiSynchronizer:
 		self.local = localFS
 		self.remotes = remoteFSs
 
+	prophet = None
+
+	storageTypeTranslation = {"box": 15, "drive": 19, "dropbox": 11}
+
+	def setProphet(self,prophet):
+		self.prophet = prophet
+
 	def synchronize(self, deletefiles = None):
 		print "Loading remote file lists"
 
@@ -165,8 +172,33 @@ class MultiSynchronizer:
 				else:
 					sortedList = getSortedDictList(remoteSizes)
 
+					ext = os.path.splitext(path)[1].strip('.')
+					if config.FILE_DISTRIBUTION_MODE == 2 and ext != "":
+						prediction = self.prophet.getPrediction(ext)["outputMulti"]
+						predLookup = {}
+						for pred in prediction:
+							lbl = pred['label']
+							if lbl.lower() in self.storageTypeTranslation:
+								lbl = self.storageTypeTranslation[lbl.lower()]
+
+							lbl = int(lbl)
+
+							predLookup[lbl] = float(pred['score'])
+
+						priorities = []
+						for remote in self.remotes:
+							if remote.storageTypeID in predLookup:
+								priorities.append(predLookup[remote.storageTypeID])
+							else:
+								priorities.append(0)
+
+						sortedList = getSortedDictList(priorities)
+						sortedList.reverse()
+
+
 					for i in range(0, len(sortedList)):
 						try:
+							print "Uploading to provider ID %s" % (self.remotes[sortedList[i]['index']].storageTypeID,)
 							remoteList = remoteLists[sortedList[i]['index']]
 							makedirs(remoteList, os.path.dirname(path))
 
