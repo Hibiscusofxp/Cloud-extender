@@ -155,7 +155,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 		for item in py["RESULT"]["DATA"]:
 			if (item[2] == "DIR"):
 				path = item[1]
-				fullPath = item[4] + item[1]
+				fullPath = item[4].rstrip('/')
 				t = item[7].split("'")[1]
 				lastModified = t + " GMT"
 				size = item[8]
@@ -185,7 +185,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 		containerid = None
 		py = res.json()
 		for item in py["RESULT"]["DATA"]:
-			if (item[1] == name):
+			if (item[1].strip('/').lower() == name.lower()):
 				containerid = unicode(int(item[3]) if isinstance(item[3], float) else item[3])
 
 		assert(containerid != None)
@@ -222,12 +222,13 @@ class FileSystem(fs.FileSystem):
 
 
 	def getRoot(self):
-		rootDir = DirectoryInformation(self.folderid, self.authorization, self.rootDir, None, None, None, '').setSession(self.session)
+		rootDir = DirectoryInformation(self.folderid, self.authorization, '/', None, None, None, '').setSession(self.session)
 		workingDir = rootDir
 		for segment in self.rootDir.split("/"):
 			if segment == "":
 				continue
-			resultList = [dir for dir in workingDir.getDirectories() if dir.name == segment]
+				
+			resultList = [dir for dir in workingDir.getDirectories() if dir.name.lower() == segment.lower()]
 			if len(resultList) > 0:
 				workingDir = resultList[0]
 				continue
