@@ -2,14 +2,14 @@
 Synchronization Implementation
 """
 
-from .api import fs
+from api import fs
 import os
 import os.path
 
 import shutil
 import time
 
-from . import config
+import config
 
 def loadDirDict(dir, dct):
 	size = dir.size or 0

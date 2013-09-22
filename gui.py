@@ -1,5 +1,6 @@
 import wx, json
-import CloudEx as CE
+import sync, sys, os, urllib
+
 
 class Example(wx.Frame):
 
@@ -9,13 +10,13 @@ class Example(wx.Frame):
             'email':email,
             'password':password,
             'apikey':apikey
-        }apikey
+        }
         paras = urllib.urlencode(paras)
         result = urllib.urlopen(fullurl, paras)
         arr = result.readlines()
         arr = json.loads(arr[0])
         self.sessionkey = arr['RESULT']['SESSIONKEY']
-        return result
+        return arr
 
     #Function runs on the event of when about menu button is clicked
     def OnAbout(self,e):
@@ -37,8 +38,8 @@ class Example(wx.Frame):
             self.pathBox.SetValue(self.dirname)
         dlg.Destroy()
         
-    #Function caches data for another session in data.datapikeyapikeyapikey
-    def SaveSettings(self):apikey
+    #Function caches data for another session in data.dat
+    def SaveSettings(self):
         f = open('data.dat', 'w')
         j = json.dumps({'path': self.pathBox.GetValue(), 'email': self.emailBox.GetValue(), 'password': self.passwordBox.GetValue(), 'apikey': self.apikeyBox.GetValue()})
         f.write(j)
@@ -59,19 +60,26 @@ class Example(wx.Frame):
             return
         
     #Runs when submit button is clicked
-    def OnSubmit(self, cloud):
-        j = json.dumps({'path': self.pathBox.GetValue(), 'email': self.emailBox.GetValue(), 'password': self.passwordBox.GetValue(), 'apikey': self.apikeyBox.GetValue()})
+    def OnSubmit(self, e):
         #send j for Authorization
-        #Authresp = cloud.Auth()
-        #if Authresp['ERROR'] == 0:
-            #runsynccode
-        #else:
-            #wx.MessageBox('Bad Login', 'Error', wx.OK | wx.ICON_INFORMATION)
-        #return
+        try:
+            Authresp = self.Auth(self.emailBox.GetValue(), self.passwordBox.GetValue(), self.apikeyBox.GetValue())
+            if Authresp['ERROR'] == 0:
+                #runsynccode
+                print "awesome"
+                self.isLogged = 1
+            else:
+                wx.MessageBox('Bad Login', 'Error', wx.OK | wx.ICON_INFORMATION)
+                self.isLogged = 0
+            return
+        except:
+            wx.MessageBox('Bad Login', 'Error', wx.OK | wx.ICON_INFORMATION)
+            self.isLogged = 0
+            return
         
     def __init__(self, parent, title):
         super(Example, self).__init__(parent, title=title, size=(500, 400), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
-        
+        self.isLogged = 0
         self.CreateStatusBar() # A Statusbar in the bottom of the window   
         self.Centre()
         
@@ -101,6 +109,9 @@ class Example(wx.Frame):
         sizeusedLabel = wx.StaticText(self, id=-1, pos=(10, 290), size=(60, 20))
         sizedleftLabel = wx.StaticText(self, id=-1, pos=(100, 290), size=(60, 20))
         
+        #Changes background to white
+        self.SetBackgroundColour('f0f0f0')
+        
         #Adds controls to sizer
         self.sizer2.Add(emailLabel, 1, wx.EXPAND)
         self.sizer2.Add(self.emailBox, 1, wx.EXPAND)
@@ -114,16 +125,13 @@ class Example(wx.Frame):
         self.sizer2.Add(submitButton, 1, wx.EXPAND)
         self.sizer2.Add(sizeusedLabel , 1, wx.EXPAND)
         self.sizer2.Add(sizedleftLabel, 1, wx.EXPAND)
-
-        #Instantiate CloudEx class
-        cloud = CE.CloudEx()
         
         #Get previous data if any
         self.readSettings()
         
         #Set usage details
-        #sizeusedLabel.SetLabel(str( "%.2f" % (cloud.getMaxFileSize(cloud.authorization,cloud.shareId)/1000000) )+"GB/")
-        sizedleftLabel.SetLabel("GB")
+        #sizeusedLabel.SetLabel(str( "%.2f" % (sync.loadDirDict(dir, dct)(cloud.authorization,cloud.shareId)/1000000) )+"GB/")
+        #sizedleftLabel.SetLabel("GB")
         
         # Use some sizers to see layout options
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -134,14 +142,18 @@ class Example(wx.Frame):
         self.Show()
         
         # Events.
+        #while True:
         self.Bind(wx.EVT_BUTTON, self.OnOpen, browseButton)
         self.Bind(wx.EVT_MENU, self.OnExit, menuExit)
         self.Bind(wx.EVT_CLOSE, self.OnExit)
         self.Bind(wx.EVT_MENU, self.OnAbout, menuAbout)
-        self.Bind(wx.EVT_BUTTON, self.OnSubmit(cloud), submitButton)
+        self.Bind(wx.EVT_BUTTON, self.OnSubmit, submitButton)
+            #if self.isLogged ==0:
+                #break
 
 if __name__ == '__main__':
-  
+        sys.path.append(os.path.dirname(__file__))
+        
         app = wx.App()
         Example(None, title='Cloud Extender')
         app.MainLoop()
