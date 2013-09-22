@@ -114,7 +114,7 @@ class Monitor:
 			#Fail silently if currently handling changes
 			self.handler_timer = setTimeout(self.change_delay if not immediate else 0, self.handleFileChanges)
 
-	def setProphet(prophet):
+	def setProphet(self,prophet):
 		self.sync.setProphet(prophet)
 
 

@@ -1,4 +1,4 @@
-import json, urllib, wx.html2, monitor, wx.lib.agw.pygauge as PG
+import json, urllib, wx.html2, monitor, filePredict, wx.lib.agw.pygauge as PG
 
 class MyBrowser(wx.Dialog): 
     def __init__(self, *args, **kwds): 
@@ -95,17 +95,20 @@ class Example(wx.Frame):
                 self.browseButton.Hide()
                 self.submitButton.Hide()
                 
+                self.oauthBox.Show()
+                self.oauthButton.Show()
                 self.syncstatusLabel.Show()          
                 self.gauge.Show()      
                 self.gauge.SetValue(0)
                 
                 self.monitor = monitor.Monitor(self.sessionkey, self.pathBox.GetValue())
                 self.monitor.start()
-                self.gauge.SetValue(100)
-                #dialog.browser.LoadURL("http://www.ADDPREDICTIONAPIOAUTH.com")
+                self.monitor.setProphet(self.fp)
+                self.gauge.SetValue(50)
+                dialog.browser.LoadURL(self.fp.getAuthorizeURL())
+                self.gauge.Pulse()
                 dialog.Show()
-                
-                print "awesome"
+                self.gauge.Pulse()
                 self.isLogged = 1
             else:
                 wx.MessageBox('Bad Login', 'Error', wx.OK | wx.ICON_INFORMATION)
@@ -116,12 +119,26 @@ class Example(wx.Frame):
             print ex
             self.isLogged = 0
             return
+    
+    def OnCode(self,e):
+        self.gauge.Pulse()
+        self.oauthBox.Hide()
+        self.gauge.Pulse()
+        self.oauthButton.Hide()
+        self.gauge.Pulse()
+        self.fp.auth(self.oauthBox.GetValue())
+        
+        self.gauge.Pulse()
+        self.gauge.SetValue(100)
+        return
+        
         
     def __init__(self, parent, title):
         super(Example, self).__init__(parent, title=title, size=(500, 400), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
         self.isLogged = 0
         self.CreateStatusBar() # A Statusbar in the bottom of the window   
         self.Centre()
+        self.fp = filePredict.Ohnoauth()
         
         # Setting up the menu.
         filemenu= wx.Menu()
@@ -151,8 +168,12 @@ class Example(wx.Frame):
         self.submitButton = wx.Button(self, id=-1, label="&Login", pos=(225, 165), size=(60, 30))
         self.gauge = wx.Gauge(self, id=-1, pos=(150,150), size=(300, 30))
         self.syncstatusLabel = wx.StaticText(self, id=-1, label="&Sync Status:", pos=(60, 155), size=(100, 30))
+        self.oauthBox = wx.TextCtrl(self, id=-1, pos=(145, 75), size=(250, 25))
+        self.oauthButton = wx.Button(self, id=-1, label="&Submit", pos=(395, 75), size=(60, 30))
         self.gauge.Hide()
         self.syncstatusLabel.Hide()
+        self.oauthBox.Hide()
+        self.oauthButton.Hide()
         
         png = wx.Image('Cloud.png', wx.BITMAP_TYPE_ANY).ConvertToBitmap()
         self.image = wx.StaticBitmap(self, -1, png, (0,0), (png.GetWidth(), png.GetHeight()))
@@ -198,6 +219,7 @@ class Example(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.OnSubmit, self.submitButton)
         self.Bind(wx.EVT_MENU, self.OnInfo, menuInfo)
         self.Bind(wx.EVT_MENU, self.OnSet, menuSet)
+        self.Bind(wx.EVT_BUTTON, self.OnCode, self.oauthButton)
             #if self.isLogged ==0:
                 #break
 
