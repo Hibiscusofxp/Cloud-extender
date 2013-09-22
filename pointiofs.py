@@ -192,7 +192,10 @@ class DirectoryInformation(fs.DirectoryInformation):
 					containerID = containerid, originalPath = item['PATH'])
 
 	def createDirectory(self, name):
-		query_args = { 'folderId': self.filesystem.folderID, 'foldername': name, 'containerid': self.containerID }
+		foldername = name
+		if self.filesystem.storageTypeID == 19: #Dropbox
+			foldername = self.fullPath + "/" + name
+		query_args = { 'folderId': self.filesystem.folderID, 'foldername': foldername, 'containerid': self.containerID }
 		res = self.session.post(self.url_create, data = query_args, 
 			headers = {
 				"Authorization": self.filesystem.authorization
