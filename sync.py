@@ -9,6 +9,8 @@ import os.path
 import shutil
 import time
 
+import dateutil.tz
+
 from . import config
 
 def loadDirDict(dir, dct):
@@ -115,7 +117,7 @@ class MultiSynchronizer:
 			else:
 				newObj = localList[os.path.dirname(path)].createFile(os.path.basename(path), dlObj)
 
-			mtime = time.mktime(obj.lastModified.timetuple())
+			mtime = time.mktime(obj.lastModified.astimezone(dateutil.tz.tzlocal()).timetuple())
 			os.utime(newObj.fullPath, (mtime, mtime))
 
 
@@ -139,6 +141,6 @@ class MultiSynchronizer:
 
 				newObj = remoteList[os.path.dirname(path)].createFile(os.path.basename(path), obj.download())
 
-			mtime = time.mktime(newObj.lastModified.timetuple())
+			mtime = time.mktime(newObj.lastModified.astimezone(dateutil.tz.tzlocal()).timetuple())
 			os.utime(obj.fullPath, (mtime, mtime))
 

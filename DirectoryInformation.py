@@ -32,7 +32,7 @@ class FileInformation(fs.FileInformation):
 			'folderid': self.folderid,
 			'filename': self.filename.encode('utf-8'),
 			'fileid': self.fileid.encode('utf-8'),
-			'containerid': self.containerid
+			'containerid': self.containerid.encode('utf-8')
 		}
 		paras = urllib.urlencode(paras)
 		reque = urllib2.Request(
@@ -49,7 +49,7 @@ class FileInformation(fs.FileInformation):
 		#example: result = cld.DownloadFile(cld.sessionkey, r"64B367EA-286D-481F-92DD9E28E9B3B4C1", "JustATest.txt", "10529642791")
 
 	def upload(self, file):
-		files = {'file': file}
+		files = {'filecontents': file}
 		#folderid = folderidVal
 		#filename = filenamjson.loads
 		# newfileid = self.filename
@@ -61,7 +61,7 @@ class FileInformation(fs.FileInformation):
 			# if filename is different, a new file will be uploaded
 			'fileid': self.fileid,
 			'containerid': self.containerid,
-			'filecontents': filecontents
+			#'filecontents': filecontents
 		}
 		req = requests.post(
 			"https://api.point.io/v2/folders/files/upload.json",
@@ -69,6 +69,7 @@ class FileInformation(fs.FileInformation):
 			files = files,
 			data = data
 		)
+
 		res = req.json()
 		# error exception
 		# update lastModified
@@ -85,7 +86,7 @@ class FileInformation(fs.FileInformation):
 			'folderid': self.folderid,
 			'filename': self.filename.encode('utf-8'),
 			'fileid': self.fileid.encode('utf-8'),
-			'containerid': self.containerid
+			'containerid': self.containerid.encode('utf-8')
 		}
 		paras = urllib.urlencode(paras)
 		reque = urllib2.Request(
@@ -107,7 +108,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 		
 
 	def getFiles(self):
-		query_args = { 'folderId':self.folderid, 'containerid': self.containerid  }
+		query_args = { 'folderId':self.folderid.encode('utf-8'), 'containerid': self.containerid.encode('utf-8')  }
 		data = urllib.urlencode(query_args)
 		request = urllib2.Request(self.url_list, data, 
 			headers = {
@@ -124,11 +125,11 @@ class DirectoryInformation(fs.DirectoryInformation):
 				lastModified = t + " GMT"
 				size = item[8]
 				# fileid = item[0]
-				fileid = str(int(item[0]) if isinstance(item[0], float) else item[0])
+				fileid = unicode(int(item[0]) if isinstance(item[0], float) else item[0])
 				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid, self.containerid)
 
 	def getDirectories(self):
-		query_args = { 'folderId': self.folderid, 'containerid': self.containerid }
+		query_args = { 'folderId': self.folderid.encode('utf-8'), 'containerid': self.containerid.encode('utf-8') }
 		data = urllib.urlencode(query_args)
 		request = urllib2.Request(self.url_list, data, 
 			headers = {
@@ -146,21 +147,21 @@ class DirectoryInformation(fs.DirectoryInformation):
 				lastModified = t + " GMT"
 				size = item[8]
 				# fileid = item[0]
-				fileid = str(int(item[0]) if isinstance(item[0], float) else item[0])
-				containerid = int(item[3]) if isinstance(item[3], float) else item[3]
+				fileid = unicode(int(item[0]) if isinstance(item[0], float) else item[0])
+				containerid = unicode(int(item[3]) if isinstance(item[3], float) else item[3])
 				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid)
 
 	def createDirectory(self, name):
-		query_args = { 'folderId':self.folderid, 'foldername':name.encode('utf-8') }
+		query_args = { 'folderId':self.folderid.encode('utf-8'), 'foldername':name.encode('utf-8') }
 		data = urllib.urlencode(query_args)
 		request = urllib2.Request(self.url_create, data, 
 			headers = {
 				"Authorization": self.authorization
 			})
 		response = urllib2.urlopen(request)
-		path = path + "/" + name
+		path = self.fullPath + "/" + name
 		# list the files
-		query_args = { 'folderId':self.folderid }
+		query_args = { 'folderId':self.folderid.encode('utf-8') }
 		data = urllib.urlencode(query_args)
 		request = urllib2.Request(self.url_list, data, 
 			headers = {
@@ -171,9 +172,9 @@ class DirectoryInformation(fs.DirectoryInformation):
 		py = json.loads(r)
 		for item in py["RESULT"]["DATA"]:
 			if (item[1] == name):
-				containerid = int(item[3]) if isinstance(item[3], float) else item[3]
+				containerid = unicode(int(item[3]) if isinstance(item[3], float) else item[3])
 		#Get lastMod and size from response
-		return DirectoryInformation(self.folderid, self.authorization, path, self, lastModified, size, containerid)		
+		return DirectoryInformation(self.folderid, self.authorization, path, self, None, None, containerid)		
 
 	def createFile(self, name, file):
 		fnFull = os.path.join(self.fullPath, name)		

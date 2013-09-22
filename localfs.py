@@ -5,11 +5,12 @@ import stat
 import datetime
 import shutil
 import time
+import dateutil.tz
 
 class FileInformation(fs.FileInformation):
 	def __init__(self, path, parent):
 		stats = os.stat(path)
-		super(FileInformation, self).__init__(path, datetime.datetime.fromtimestamp(stats[stat.ST_MTIME]), stats[stat.ST_SIZE], parent)
+		super(FileInformation, self).__init__(path, datetime.datetime.fromtimestamp(stats[stat.ST_MTIME], dateutil.tz.tzlocal()), stats[stat.ST_SIZE], parent)
 
 	def download(self):
 		return open(self.fullPath, 'rb')
@@ -27,7 +28,7 @@ class FileInformation(fs.FileInformation):
 class DirectoryInformation(fs.DirectoryInformation):
 	def __init__(self, path, parent = None):
 		stats = os.stat(path)
-		super(DirectoryInformation, self).__init__(path, datetime.datetime.fromtimestamp(stats[stat.ST_MTIME]), stats[stat.ST_SIZE], parent)
+		super(DirectoryInformation, self).__init__(path, datetime.datetime.fromtimestamp(stats[stat.ST_MTIME], dateutil.tz.tzlocal()), stats[stat.ST_SIZE], parent)
 
 	def getFiles(self):
 		for fn in os.listdir(unicode(self.fullPath)):
