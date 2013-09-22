@@ -1,6 +1,13 @@
-import wx, json
-import sys, os, urllib
-import wx.lib.agw.pygauge as PG
+import json, urllib, wx.html2, monitor, wx.lib.agw.pygauge as PG
+
+class MyBrowser(wx.Dialog): 
+    def __init__(self, *args, **kwds): 
+        wx.Dialog.__init__(self, *args, **kwds) 
+        sizer = wx.BoxSizer(wx.VERTICAL) 
+        self.browser = wx.html2.WebView.New(self) 
+        sizer.Add(self.browser, 1, wx.EXPAND, 10) 
+        self.SetSizer(sizer) 
+        self.SetSize((700, 700))
 
 class Example(wx.Frame):
 
@@ -75,15 +82,38 @@ class Example(wx.Frame):
         try:
             Authresp = self.Auth(self.emailBox.GetValue(), self.passwordBox.GetValue(), self.apikeyBox.GetValue())
             if Authresp['ERROR'] == 0:
-                #runsynccode
+                self.emailLabel.Hide()
+                self.emailBox.Hide()
+                self.passwordLabel.Hide()
+                self.passwordBox.Hide()
+                self.apikeyLabel.Hide()
+                self.apikeyBox.Hide()
+                self.locationLabel.Hide()
+                self.pathBox.Hide()
+                self.emailBox.Hide()
+                self.browseButton.Hide()
+                self.browseButton.Hide()
+                self.submitButton.Hide()
+                
+                self.syncstatusLabel.Show()          
+                self.gauge.Show()      
+                self.gauge.SetValue(0)
+                
+                self.monitor = monitor.Monitor(self.sessionkey, self.pathBox.GetValue())
+                self.monitor.start()
+                self.gauge.SetValue(100)
+                #dialog.browser.LoadURL("http://www.ADDPREDICTIONAPIOAUTH.com")
+                dialog.Show()
+                
                 print "awesome"
                 self.isLogged = 1
             else:
                 wx.MessageBox('Bad Login', 'Error', wx.OK | wx.ICON_INFORMATION)
                 self.isLogged = 0
             return
-        except:
+        except Exception as ex:
             wx.MessageBox('Bad Login', 'Error', wx.OK | wx.ICON_INFORMATION)
+            print ex
             self.isLogged = 0
             return
         
@@ -105,22 +135,24 @@ class Example(wx.Frame):
         menuBar.Append(filemenu,"&File") # Adding the "filemenu" to the MenuBar
         self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
 
-        loginpnl = wx.Panel(self, -1)
+        #self.loginpnl = wx.Panel(self, -1)
         # self.sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         #Creates controls
         #oliver
-        emailLabel = wx.StaticText(self, id=-1, label="&Email:", pos=(100, 80), size=(60, 30))
+        self.emailLabel = wx.StaticText(self, id=-1, label="&Email:", pos=(100, 80), size=(60, 30))
         self.emailBox = wx.TextCtrl(self, id=-1, pos=(145, 75), size=(250, 25))
-        passwordLabel = wx.StaticText(self, id=-1, label="&Password:", pos=(75, 110), size=(65, 30))
+        self.passwordLabel = wx.StaticText(self, id=-1, label="&Password:", pos=(75, 110), size=(65, 30))
         self.passwordBox = wx.TextCtrl(self, id=-1, style= wx.TE_PASSWORD , pos=(145, 105), size=(250, 25))
-        apikeyLabel = wx.StaticText(self, id=-1, label="&API Key:", pos=(87, 140), size=(60, 30))
+        self.apikeyLabel = wx.StaticText(self, id=-1, label="&API Key:", pos=(87, 140), size=(60, 30))
         self.apikeyBox = wx.TextCtrl(self, id=-1, pos=(145, 135), size=(250, 25))
-        locationLabel = wx.StaticText(self, id=-1, label="&Location:", pos=(50, 285), size=(60, 30))
+        self.locationLabel = wx.StaticText(self, id=-1, label="&Location:", pos=(50, 285), size=(60, 20))
         self.pathBox = wx.TextCtrl(self, id=-1, pos=(120, 280), size=(250, 30))
-        browseButton = wx.Button(self, id=-1, label="&...", pos=(375, 280), size=(35, 30))
-        submitButton = wx.Button(self, id=-1, label="&Login", pos=(225, 165), size=(60, 30))
-        sizeusedLabel = wx.StaticText(self, id=-1, pos=(10, 310), size=(60, 20))
-        sizedleftLabel = wx.StaticText(self, id=-1, pos=(100, 310), size=(60, 20))
+        self.browseButton = wx.Button(self, id=-1, label="&...", pos=(375, 280), size=(35, 30))
+        self.submitButton = wx.Button(self, id=-1, label="&Login", pos=(225, 165), size=(60, 30))
+        self.gauge = wx.Gauge(self, id=-1, pos=(150,150), size=(300, 30))
+        self.syncstatusLabel = wx.StaticText(self, id=-1, label="&Sync Status:", pos=(60, 155), size=(100, 30))
+        self.gauge.Hide()
+        self.syncstatusLabel.Hide()
         
         png = wx.Image('Cloud.png', wx.BITMAP_TYPE_ANY).ConvertToBitmap()
         self.image = wx.StaticBitmap(self, -1, png, (0,0), (png.GetWidth(), png.GetHeight()))
@@ -159,11 +191,11 @@ class Example(wx.Frame):
         
         # Events.
         #while True:
-        self.Bind(wx.EVT_BUTTON, self.OnOpen, browseButton)
+        self.Bind(wx.EVT_BUTTON, self.OnOpen, self.browseButton)
         self.Bind(wx.EVT_MENU, self.OnExit, menuExit)
         self.Bind(wx.EVT_CLOSE, self.OnExit)
         self.Bind(wx.EVT_MENU, self.OnAbout, menuAbout)
-        self.Bind(wx.EVT_BUTTON, self.OnSubmit, submitButton)
+        self.Bind(wx.EVT_BUTTON, self.OnSubmit, self.submitButton)
         self.Bind(wx.EVT_MENU, self.OnInfo, menuInfo)
         self.Bind(wx.EVT_MENU, self.OnSet, menuSet)
             #if self.isLogged ==0:
@@ -209,13 +241,13 @@ class InfoDia(wx.Dialog):
         hbox3 = wx.BoxSizer(wx.HORIZONTAL)
         # tc2 = wx.TextCtrl(panel, style=wx.TE_MULTILINE)
 
-        bigBar = PG.PyGauge(panel, -1, size=(200, 25), style=wx.GA_HORIZONTAL)
-        bigBar.SetValue([100*self.box/self.total, 100*(self.drive+self.box)/self.total, 100*(self.dropbox+self.box+self.drive)/self.total])
-        bigBar.SetBarColor([wx.Colour(162, 255, 178), wx.Colour(159, 176, 255), wx.Colour(59, 76, 255)])
-        bigBar.SetBackgroundColour(wx.WHITE)
-        bigBar.SetBorderColor(wx.BLACK)
+        self.bigBar = PG.PyGauge(panel, -1, size=(200, 25), style=wx.GA_HORIZONTAL)
+        self.bigBar.SetValue([100*self.box/self.total, 100*(self.drive+self.box)/self.total, 100*(self.dropbox+self.box+self.drive)/self.total])
+        self.bigBar.SetBarColor([wx.Colour(162, 255, 178), wx.Colour(159, 176, 255), wx.Colour(59, 76, 255)])
+        self.bigBar.SetBackgroundColour(wx.WHITE)
+        self.bigBar.SetBorderColor(wx.BLACK)
 
-        hbox3.Add(bigBar, proportion=1, flag=wx.EXPAND)
+        hbox3.Add(self.bigBar, proportion=1, flag=wx.EXPAND)
         vbox.Add(hbox3, proportion=1, flag=wx.LEFT|wx.RIGHT|wx.EXPAND, 
             border=10)
 
@@ -256,7 +288,7 @@ class InfoDia(wx.Dialog):
         hbox2 = wx.BoxSizer(wx.HORIZONTAL)
         st2 = wx.StaticText(panel, label='Remaining Storage: ')
         st2.SetFont(font)
-        st3 = wx.StaticText(panel, label=str(self.dropbox+self.box+self.drive) + 'GB / ' + str(self.total) + 'GB')
+        st3 = wx.StaticText(panel, label=str(self.total-(self.dropbox+self.box+self.drive)) + 'GB / ' + str(self.total) + 'GB')
         st3.SetFont(font)
         hbox2.Add(st2)
         hbox2.Add(st3)
@@ -326,5 +358,6 @@ if __name__ == '__main__':
         # sys.path.append(os.path.dirname(__file__))
         
         app = wx.App()
+        dialog = MyBrowser(None, -1) 
         Example(None, title='Cloud Extender')
         app.MainLoop()

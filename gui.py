@@ -2,6 +2,7 @@ import wx, json
 import sync, sys, os, urllib
 import wx.html2 
 import monitor
+import wx.lib.agw.pygauge as PG
 
 class MyBrowser(wx.Dialog): 
   def __init__(self, *args, **kwds): 
@@ -75,8 +76,36 @@ class Example(wx.Frame):
         try:
             Authresp = self.Auth(self.emailBox.GetValue(), self.passwordBox.GetValue(), self.apikeyBox.GetValue())
             if Authresp['ERROR'] == 0:
+                self.sizer2.Hide(self.emailLabel)
+                self.sizer2.Hide(self.emailBox)
+                self.sizer2.Hide(self.passwordLabel)
+                self.sizer2.Hide(self.passwordBox)
+                self.sizer2.Hide(self.apikeyLabel)
+                self.sizer2.Hide(self.apikeyBox)
+                self.sizer2.Hide(self.locationLabel)
+                self.sizer2.Hide(self.pathBox)
+                self.sizer2.Hide(self.emailBox)
+                self.sizer2.Hide(self.browseButton)
+                self.sizer2.Hide(self.browseButton)
+                self.sizer2.Hide(self.submitButton)
+                
+                self.gauge.Show()
+                self.syncstatusLabel.Show()
+                self.bigBar.Show()
+                self.gauge.Show()
+                self.square1.Show()
+                self.st4.Show()
+                self.square2.Show()
+                self.st5.Show()
+                self.square3.Show()
+                self.st6.Show()
+                self.st2.Show()
+                
+                self.gauge.SetValue(0)
+                
                 self.monitor = monitor.Monitor(self.sessionkey, self.pathBox.GetValue())
                 self.monitor.start()
+                self.gauge.SetValue(100)
                 dialog.browser.LoadURL("http://www.ADDPREDICTIONAPIOAUTH.com")
                 dialog.Show()
                 print "awesome"
@@ -109,35 +138,77 @@ class Example(wx.Frame):
         self.sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         
         #Creates controls
-        emailLabel = wx.StaticText(self, id=-1, label="&Email:", pos=(100, 50), size=(60, 30))
+        self.emailLabel = wx.StaticText(self, id=-1, label="&Email:", pos=(100, 50), size=(60, 30))
         self.emailBox = wx.TextCtrl(self, id=-1, pos=(145, 45), size=(250, 25))
-        passwordLabel = wx.StaticText(self, id=-1, label="&Password:", pos=(75, 80), size=(65, 30))
+        self.passwordLabel = wx.StaticText(self, id=-1, label="&Password:", pos=(75, 80), size=(65, 30))
         self.passwordBox = wx.TextCtrl(self, id=-1, style= wx.TE_PASSWORD , pos=(145, 75), size=(250, 25))
-        apikeyLabel = wx.StaticText(self, id=-1, label="&API Key:", pos=(87, 110), size=(60, 30))
+        self.apikeyLabel = wx.StaticText(self, id=-1, label="&API Key:", pos=(87, 110), size=(60, 30))
         self.apikeyBox = wx.TextCtrl(self, id=-1, pos=(145, 105), size=(250, 25))
-        locationLabel = wx.StaticText(self, id=-1, label="&Location:", pos=(50, 255), size=(60, 30))
+        self.locationLabel = wx.StaticText(self, id=-1, label="&Location:", pos=(50, 255), size=(60, 30))
         self.pathBox = wx.TextCtrl(self, id=-1, pos=(120, 250), size=(250, 30))
-        browseButton = wx.Button(self, id=-1, label="&...", pos=(375, 250), size=(35, 30))
-        submitButton = wx.Button(self, id=-1, label="&Login", pos=(225, 135), size=(60, 30))
-        sizeusedLabel = wx.StaticText(self, id=-1, pos=(10, 290), size=(60, 20))
-        sizedleftLabel = wx.StaticText(self, id=-1, pos=(100, 290), size=(60, 20))
+        self.browseButton = wx.Button(self, id=-1, label="&...", pos=(375, 250), size=(35, 30))
+        self.submitButton = wx.Button(self, id=-1, label="&Login", pos=(225, 135), size=(60, 30))
+        self.gauge = wx.Gauge(self, id=-1, pos=(150,150), size=(300, 30))
+        self.syncstatusLabel = wx.StaticText(self, id=-1, label="&Sync Status:", pos=(70, 155), size=(85, 20))
+        
+        self.bigBar = PG.PyGauge(self, -1,pos=(0,25), size=(400, 30), style=wx.GA_HORIZONTAL)
+        #self.bigBar.SetValue([100*self.box/self.total, 100*(self.drive+self.box)/self.total, 100*(self.dropbox+self.box+self.drive)/self.total])
+        self.bigBar.SetValue(50)
+        self.bigBar.SetBarColor([wx.Colour(162, 255, 178), wx.Colour(159, 176, 255), wx.Colour(59, 76, 255)])
+        self.bigBar.SetBackgroundColour(wx.WHITE)
+        self.bigBar.SetBorderColor(wx.BLACK)
+        
+        #vbox = wx.BoxSizer(wx.VERTICAL)
+        #vbox.Add((-1, 20))
+        #hbox4 = wx.BoxSizer(wx.HORIZONTAL)
+        self.square1 = PG.PyGauge(self, -1, pos=(50,55), size=(25, 25), style=wx.GA_HORIZONTAL)
+        self.square1.SetValue(100)
+        self.square1.SetBarColor(wx.Colour(162, 255, 178))
+        self.square1.SetBackgroundColour(wx.WHITE)
+        self.square1.SetBorderColor(wx.WHITE)
+        self.st4 = wx.StaticText(self, pos=(0,55), label=' BOX')
+        
+        self.square2 = PG.PyGauge(self, -1, pos=(175,55), size=(25, 25), style=wx.GA_HORIZONTAL)
+        self.square2.SetValue(100)
+        self.square2.SetBarColor(wx.Colour(159, 176, 255))
+        self.square2.SetBackgroundColour(wx.WHITE)
+        self.square2.SetBorderColor(wx.WHITE)
+        self.st5 = wx.StaticText(self, pos=(80,55), label=' Google Drive')
+        
+        self.square3 = PG.PyGauge(self, -1, pos=(280,55), size=(25, 25), style=wx.GA_HORIZONTAL)
+        self.square3.SetValue(100)
+        self.square3.SetBarColor(wx.Colour(59, 76, 255))
+        self.square3.SetBackgroundColour(wx.WHITE)
+        self.square3.SetBorderColor(wx.WHITE)
+        self.st6 = wx.StaticText(self, pos=(200,55), label=' Dropbox')
+
+        self.st2 = wx.StaticText(self, pos=(0,95), label='Remaining Storage: ')
+
+        self.gauge.Hide()
+        self.syncstatusLabel.Hide()
+        self.bigBar.Hide()
+        self.square1.Hide()
+        self.st4.Hide()
+        self.square2.Hide()
+        self.st5.Hide()
+        self.square3.Hide()
+        self.st6.Hide()
+        self.st2.Hide()
         
         #Changes background to white
         self.SetBackgroundColour('f0f0f0')
         
         #Adds controls to sizer
-        self.sizer2.Add(emailLabel, 1, wx.EXPAND)
+        self.sizer2.Add(self.emailLabel, 1, wx.EXPAND)
         self.sizer2.Add(self.emailBox, 1, wx.EXPAND)
-        self.sizer2.Add(passwordLabel, 1, wx.EXPAND)
+        self.sizer2.Add(self.passwordLabel, 1, wx.EXPAND)
         self.sizer2.Add(self.passwordBox, 1, wx.EXPAND)
-        self.sizer2.Add(apikeyLabel, 1, wx.EXPAND)
+        self.sizer2.Add(self.apikeyLabel, 1, wx.EXPAND)
         self.sizer2.Add(self.apikeyBox, 1, wx.EXPAND)
-        self.sizer2.Add(locationLabel, 1, wx.EXPAND)
+        self.sizer2.Add(self.locationLabel, 1, wx.EXPAND)
         self.sizer2.Add(self.pathBox, 1, wx.EXPAND)
-        self.sizer2.Add(browseButton, 1, wx.EXPAND)
-        self.sizer2.Add(submitButton, 1, wx.EXPAND)
-        self.sizer2.Add(sizeusedLabel , 1, wx.EXPAND)
-        self.sizer2.Add(sizedleftLabel, 1, wx.EXPAND)
+        self.sizer2.Add(self.browseButton, 1, wx.EXPAND)
+        self.sizer2.Add(self.submitButton, 1, wx.EXPAND)
         
         #Get previous data if any
         self.readSettings()
@@ -156,11 +227,11 @@ class Example(wx.Frame):
         
         # Events.
         #while True:
-        self.Bind(wx.EVT_BUTTON, self.OnOpen, browseButton)
+        self.Bind(wx.EVT_BUTTON, self.OnOpen, self.browseButton)
         self.Bind(wx.EVT_MENU, self.OnExit, menuExit)
         self.Bind(wx.EVT_CLOSE, self.OnExit)
         self.Bind(wx.EVT_MENU, self.OnAbout, menuAbout)
-        self.Bind(wx.EVT_BUTTON, self.OnSubmit, submitButton)
+        self.Bind(wx.EVT_BUTTON, self.OnSubmit, self.submitButton)
             #if self.isLogged ==0:
                 #break
 
