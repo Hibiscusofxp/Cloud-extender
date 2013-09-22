@@ -31,13 +31,14 @@ class FileInformation(fs.FileInformation):
 	fileid = None
 	session = requests
 
-	def __init__(self, fullPath, lastModified, size, parent, authorization, folderid, fileid, containerid):
+	def __init__(self, fullPath, lastModified, size, parent, authorization, folderid, fileid, containerid, remotepath):
 		super(FileInformation, self).__init__(fullPath, lastModified, size, parent)
 		self.authorization = authorization
 		self.filename = self.name
 		self.folderid = folderid
 		self.fileid = fileid
 		self.containerid = containerid
+		self.remotepath = remotepath
 
 
 	def download(self):
@@ -48,7 +49,8 @@ class FileInformation(fs.FileInformation):
 			'folderid': self.folderid,
 			'filename': self.filename.encode('utf-8'),
 			'fileid': self.fileid.encode('utf-8'),
-			'containerid': self.containerid.encode('utf-8')
+			'containerid': self.containerid.encode('utf-8'),
+			'remotepath': self.remotepath.encode('utf-8'),
 		}
 		paras = urllib.urlencode(paras)
 		res = self.session.get(
@@ -74,6 +76,7 @@ class FileInformation(fs.FileInformation):
 			# if filename is different, a new file will be uploaded
 			'fileid': self.fileid,
 			'containerid': self.containerid,
+			'remotepath': self.remotepath,
 			#'filecontents': filecontents
 		}
 		req = self.session.post(
@@ -99,9 +102,10 @@ class FileInformation(fs.FileInformation):
 			'folderid': self.folderid,
 			'filename': self.filename,
 			'fileid': self.fileid,
-			'containerid': self.containerid
+			'containerid': self.containerid,
+			'remotepath': self.remotepath
 		}
-		res = self.session.get(
+		res = self.session.post(
 			"https://api.point.io/v2/folders/files/delete.json", data=paras,
 			headers={
 				'Authorization': self.authorization,
@@ -117,16 +121,17 @@ class DirectoryInformation(fs.DirectoryInformation):
 	url_create = 'https://api.point.io/v2/folders/create.json'
 	session = requests
 	json_cache = None
-	def __init__(self, folderid, authorization, path, parent = None, lastModified = None, size = None, containerid = None):
+	def __init__(self, folderid, authorization, path, parent = None, lastModified = None, size = None, containerid = None, originalpath = ''):
 		super(DirectoryInformation, self).__init__(path, lastModified, size, parent) 
 
 		self.folderid = folderid
 		self.authorization = authorization
 		self.containerid = containerid
+		self.originalpath = originalpath
 		
 	def getJSONResult(self):
 		if not self.json_cache:
-			query_args = { 'folderId':self.folderid.encode('utf-8'), 'containerid': self.containerid.encode('utf-8')  }
+			query_args = { 'folderId':self.folderid.encode('utf-8'), 'containerid': self.containerid.encode('utf-8'), 'path': self.originalpath.encode('utf-8')  }
 			data = urllib.urlencode(query_args)
 			res = self.session.get(self.url_list + "?" + data, 
 				headers = {
@@ -147,7 +152,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				size = item[8]
 				# fileid = item[0]
 				fileid = unicode(int(item[0]) if isinstance(item[0], float) else item[0])
-				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid, self.containerid).setSession(self.session)
+				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid, self.containerid, self.originalpath).setSession(self.session)
 
 	def getDirectories(self):
 		py = self.getJSONResult()
@@ -162,7 +167,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				# fileid = item[0]
 				fileid = unicode(int(item[0]) if isinstance(item[0], float) else item[0])
 				containerid = unicode(int(item[3]) if isinstance(item[3], float) else item[3])
-				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid).setSession(self.session)
+				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid, item[4]).setSession(self.session)
 
 	def createDirectory(self, name):
 		query_args = { 'folderId':self.folderid, 'foldername':name, 'containerid': self.containerid }
@@ -187,15 +192,16 @@ class DirectoryInformation(fs.DirectoryInformation):
 		for item in py["RESULT"]["DATA"]:
 			if (item[1].strip('/').lower() == name.lower()):
 				containerid = unicode(int(item[3]) if isinstance(item[3], float) else item[3])
+				originalpath = item[4]
 
 		assert(containerid != None)
 
 		#Get lastMod and size from response
-		return DirectoryInformation(self.folderid, self.authorization, path, self, None, None, containerid).setSession(self.session)	
+		return DirectoryInformation(self.folderid, self.authorization, path, self, None, None, containerid, originalpath).setSession(self.session)	
 
 	def createFile(self, name, file):
 		fnFull = os.path.join(self.fullPath, name)		
-		newFile = FileInformation(fnFull, "", 0, self.parent, self.authorization, self.folderid, name, self.containerid).setSession(self.session)
+		newFile = FileInformation(fnFull, "", 0, self.parent, self.authorization, self.folderid, name, self.containerid, self.originalpath).setSession(self.session)
 		newFile.upload(file);
 		# CAUTION: fileid might not correct now!
 		# remaining: grab the fileid
@@ -227,7 +233,7 @@ class FileSystem(fs.FileSystem):
 		for segment in self.rootDir.split("/"):
 			if segment == "":
 				continue
-				
+
 			resultList = [dir for dir in workingDir.getDirectories() if dir.name.lower() == segment.lower()]
 			if len(resultList) > 0:
 				workingDir = resultList[0]
