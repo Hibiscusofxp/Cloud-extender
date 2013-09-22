@@ -44,6 +44,7 @@ class FileSystemInformation(object):
 		@param lastModified the string or python date of the last modification date of the object
 		@param size         the size (in bytes) of the object
 		"""
+		fullPath = fullPath.rstrip('/')
 		self.fullPath = fullPath
 		if isinstance(lastModified, basestring):
 			self.lastModified = dateutil.parser.parse(lastModified)
@@ -144,6 +145,8 @@ class FileSystem:
 	File System API
 	Defines base functions used by the API. Implement those that are needed
 	"""
+
+	storageTypeID = None
 
 	def getMaxFileSize(self):
 		"""
