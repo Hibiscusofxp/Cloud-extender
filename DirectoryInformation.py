@@ -10,11 +10,26 @@ import json
 import yaml
 import dateutil
 
+class RequestFileWrapper:
+	def __init__(self, res):
+		self.response = res
+		self.read_iter = iter(res.iter_content(4096))
+
+	def read(self, size):
+		try:
+			return self.read_iter.next()
+		except StopIteration:
+			return ''
+
+	def close(self):
+		self.response.close()
+
 class FileInformation(fs.FileInformation):
 	authorization = None
 	folderid = None
 	filename = None
 	fileid = None
+	session = requests
 
 	def __init__(self, fullPath, lastModified, size, parent, authorization, folderid, fileid, containerid):
 		super(FileInformation, self).__init__(fullPath, lastModified, size, parent)
@@ -23,6 +38,7 @@ class FileInformation(fs.FileInformation):
 		self.folderid = folderid
 		self.fileid = fileid
 		self.containerid = containerid
+
 
 	def download(self):
 		"""
@@ -35,17 +51,14 @@ class FileInformation(fs.FileInformation):
 			'containerid': self.containerid.encode('utf-8')
 		}
 		paras = urllib.urlencode(paras)
-		reque = urllib2.Request(
+		res = self.session.get(
 			"https://api.point.io/v2/folders/files/download.json?"+paras,
 			headers={
 				'Authorization': self.authorization,
 			})
-		req = urllib2.urlopen(reque)
-		res = req.readlines()
-		res = json.loads(res[0])
+		res = res.json()
 		resURL = res['RESULT']
-		resFile = urllib.urlopen(resURL)
-		return resFile
+		return RequestFileWrapper(self.session.get(resURL, stream=True))
 		#example: result = cld.DownloadFile(cld.sessionkey, r"64B367EA-286D-481F-92DD9E28E9B3B4C1", "JustATest.txt", "10529642791")
 
 	def upload(self, file):
@@ -63,7 +76,7 @@ class FileInformation(fs.FileInformation):
 			'containerid': self.containerid,
 			#'filecontents': filecontents
 		}
-		req = requests.post(
+		req = self.session.post(
 			"https://api.point.io/v2/folders/files/upload.json",
 			headers= {'Authorization': self.authorization},
 			files = files,
@@ -84,21 +97,25 @@ class FileInformation(fs.FileInformation):
 	def delete(self):
 		paras = {
 			'folderid': self.folderid,
-			'filename': self.filename.encode('utf-8'),
-			'fileid': self.fileid.encode('utf-8'),
-			'containerid': self.containerid.encode('utf-8')
+			'filename': self.filename,
+			'fileid': self.fileid,
+			'containerid': self.containerid
 		}
-		paras = urllib.urlencode(paras)
-		reque = urllib2.Request(
-			"https://api.point.io/v2/folders/files/delete.json?"+paras,
+		res = self.session.get(
+			"https://api.point.io/v2/folders/files/delete.json", data=paras,
 			headers={
 				'Authorization': self.authorization,
 			})
-		req = urllib2.urlopen(reque)
+		res.close()
+
+	def setSession(self, session):
+		self.session = session
+		return self
 
 class DirectoryInformation(fs.DirectoryInformation):
 	url_list = 'https://api.point.io/v2/folders/list.json'
 	url_create = 'https://api.point.io/v2/folders/create.json'
+	session = requests
 	def __init__(self, folderid, authorization, path, parent = None, lastModified = None, size = None, containerid = None):
 		super(DirectoryInformation, self).__init__(path, lastModified, size, parent) 
 
@@ -110,13 +127,14 @@ class DirectoryInformation(fs.DirectoryInformation):
 	def getFiles(self):
 		query_args = { 'folderId':self.folderid.encode('utf-8'), 'containerid': self.containerid.encode('utf-8')  }
 		data = urllib.urlencode(query_args)
-		request = urllib2.Request(self.url_list, data, 
+		res = self.session.get(self.url_list + "?" + data, 
 			headers = {
 				"Authorization": self.authorization
 			})
-		response = urllib2.urlopen(request)
-		r = response.readline()
-		py = json.loads(r)
+		
+		py = res.json()
+
+		print py
 
 		for item in py["RESULT"]["DATA"]:
 			if (item[2] != "DIR"):
@@ -126,18 +144,17 @@ class DirectoryInformation(fs.DirectoryInformation):
 				size = item[8]
 				# fileid = item[0]
 				fileid = unicode(int(item[0]) if isinstance(item[0], float) else item[0])
-				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid, self.containerid)
+				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid, self.containerid).setSession(self.session)
 
 	def getDirectories(self):
 		query_args = { 'folderId': self.folderid.encode('utf-8'), 'containerid': self.containerid.encode('utf-8') }
 		data = urllib.urlencode(query_args)
-		request = urllib2.Request(self.url_list, data, 
+		res = self.session.get(self.url_list + "?" + data,
 			headers = {
 				"Authorization": self.authorization
 			})
-		response = urllib2.urlopen(request)
-		r = response.readline()
-		py = json.loads(r)
+
+		py = res.json()
 		# folderid, authorization, parent
 		for item in py["RESULT"]["DATA"]:
 			if (item[2] == "DIR"):
@@ -149,36 +166,35 @@ class DirectoryInformation(fs.DirectoryInformation):
 				# fileid = item[0]
 				fileid = unicode(int(item[0]) if isinstance(item[0], float) else item[0])
 				containerid = unicode(int(item[3]) if isinstance(item[3], float) else item[3])
-				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid)
+				yield DirectoryInformation(self.folderid, self.authorization, fullPath, self, lastModified, size, containerid).setSession(self.session)
 
 	def createDirectory(self, name):
-		query_args = { 'folderId':self.folderid.encode('utf-8'), 'foldername':name.encode('utf-8') }
-		data = urllib.urlencode(query_args)
-		request = urllib2.Request(self.url_create, data, 
+		query_args = { 'folderId':self.folderid, 'foldername':name }
+		res = self.session.post(self.url_create, data = query_args, 
 			headers = {
 				"Authorization": self.authorization
 			})
-		response = urllib2.urlopen(request)
+		res.close()
+
 		path = self.fullPath + "/" + name
 		# list the files
 		query_args = { 'folderId':self.folderid.encode('utf-8') }
 		data = urllib.urlencode(query_args)
-		request = urllib2.Request(self.url_list, data, 
+		res = self.session.get(self.url_list + "?" + data, 
 			headers = {
 				"Authorization": self.authorization
 			})
-		response = urllib2.urlopen(request)
-		r = response.readline()
-		py = json.loads(r)
+		
+		py = res.json()
 		for item in py["RESULT"]["DATA"]:
 			if (item[1] == name):
 				containerid = unicode(int(item[3]) if isinstance(item[3], float) else item[3])
 		#Get lastMod and size from response
-		return DirectoryInformation(self.folderid, self.authorization, path, self, None, None, containerid)		
+		return DirectoryInformation(self.folderid, self.authorization, path, self, None, None, containerid).setSession(self.session)	
 
 	def createFile(self, name, file):
 		fnFull = os.path.join(self.fullPath, name)		
-		newFile = FileInformation(fnFull, "", 0, self.parent, self.authorization, self.folderid, name, self.containerid)
+		newFile = FileInformation(fnFull, "", 0, self.parent, self.authorization, self.folderid, name, self.containerid).setSession(self.session)
 		newFile.upload(file);
 		# CAUTION: fileid might not correct now!
 		# remaining: grab the fileid
@@ -188,12 +204,18 @@ class DirectoryInformation(fs.DirectoryInformation):
 				newFile.fileid = item.fileid
 		return newFile
 
+	def setSession(self, session):
+		self.session = session
+		return self
+
 class FileSystem(fs.FileSystem):
 	rootDir = '/'
 	folderid = None
 	authorization = None
+	session = None
 	def __init__(self, folderid, authorization):
 		self.folderid = folderid
 		self.authorization = authorization
+		self.session = requests.session()
 	def getRoot(self):
-		return DirectoryInformation(self.folderid, self.authorization, self.rootDir, None, None, None, '')
+		return DirectoryInformation(self.folderid, self.authorization, self.rootDir, None, None, None, '').setSession(self.session)
