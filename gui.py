@@ -1,6 +1,15 @@
 import wx, json
 import sync, sys, os, urllib
+import wx.html2 
 
+class MyBrowser(wx.Dialog): 
+  def __init__(self, *args, **kwds): 
+    wx.Dialog.__init__(self, *args, **kwds) 
+    sizer = wx.BoxSizer(wx.VERTICAL) 
+    self.browser = wx.html2.WebView.New(self) 
+    sizer.Add(self.browser, 1, wx.EXPAND, 10) 
+    self.SetSizer(sizer) 
+    self.SetSize((700, 700))
 
 class Example(wx.Frame):
 
@@ -66,6 +75,8 @@ class Example(wx.Frame):
             Authresp = self.Auth(self.emailBox.GetValue(), self.passwordBox.GetValue(), self.apikeyBox.GetValue())
             if Authresp['ERROR'] == 0:
                 #runsynccode
+                dialog.browser.LoadURL("http://www.ADDPREDICTIONAPIOAUTH.com")
+                dialog.Show()
                 print "awesome"
                 self.isLogged = 1
             else:
@@ -155,5 +166,6 @@ if __name__ == '__main__':
         sys.path.append(os.path.dirname(__file__))
         
         app = wx.App()
+        dialog = MyBrowser(None, -1) 
         Example(None, title='Cloud Extender')
         app.MainLoop()
