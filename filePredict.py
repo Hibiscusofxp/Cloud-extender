@@ -17,7 +17,7 @@ class Ohnoauth():
         self.REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
         self.PROJECT = 189438750868
         self.ID = 13
-        self.STORAGEDATALOCATION = 'cloudextender/m.csv'
+        self.STORAGEDATALOCATION = 'cloudextender/m2.csv'
         self.SLEEP_TIME = 10
 
         flow = OAuth2WebServerFlow(self.CLIENT_ID, self.CLIENT_SECRET, self.OAUTH_SCOPE, self.REDIRECT_URI)
