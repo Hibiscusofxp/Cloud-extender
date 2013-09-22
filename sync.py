@@ -103,7 +103,6 @@ class MultiSynchronizer:
 				if not targetFound:
 					uploads[path] = (obj, None, None)
 				elif obj.lastModified > targetFound.lastModified:
-					print obj.lastModified, targetFound.lastModified
 					uploads[path] = (obj, targetFound, listFound)
 
 		print "Downloading"
@@ -123,24 +122,27 @@ class MultiSynchronizer:
 
 		print "Uploading"
 		for path, obj in uploads.iteritems():
-			print "Uploading %s" % (path,)
-			obj, remoteObj, remoteList = obj
+			try:
+				print "Uploading %s" % (path,)
+				obj, remoteObj, remoteList = obj
 
-			if remoteObj:
-				if config.FILE_DISTRIBUTION_MODE == 1:
-					remoteSizes[remoteListLookup[id(remoteList)]] += obj.size - remoteObj.size
+				if remoteObj:
+					if config.FILE_DISTRIBUTION_MODE == 1:
+						remoteSizes[remoteListLookup[id(remoteList)]] += obj.size - remoteObj.size
 
-				remoteObj.upload(obj.download())
-				newObj = remoteObj
-			else:
-				remoteList = remoteLists[getSortedDictList(remoteSizes)[0]['index']]
-				makedirs(remoteList, os.path.dirname(path))
+					remoteObj.upload(obj.download())
+					newObj = remoteObj
+				else:
+					remoteList = remoteLists[getSortedDictList(remoteSizes)[0]['index']]
+					makedirs(remoteList, os.path.dirname(path))
 
-				if config.FILE_DISTRIBUTION_MODE == 1:
-					remoteSizes[remoteListLookup[id(remoteList)]] += obj.size
+					if config.FILE_DISTRIBUTION_MODE == 1:
+						remoteSizes[remoteListLookup[id(remoteList)]] += obj.size
 
-				newObj = remoteList[os.path.dirname(path)].createFile(os.path.basename(path), obj.download())
+					newObj = remoteList[os.path.dirname(path)].createFile(os.path.basename(path), obj.download())
 
-			mtime = time.mktime(newObj.lastModified.astimezone(dateutil.tz.tzlocal()).timetuple())
-			os.utime(obj.fullPath, (mtime, mtime))
+				mtime = time.mktime(newObj.lastModified.astimezone(dateutil.tz.tzlocal()).timetuple())
+				os.utime(obj.fullPath, (mtime, mtime))
+			except Exception as ex:
+				print u"Failed: " + unicode(ex)
 

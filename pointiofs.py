@@ -116,6 +116,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 	url_list = 'https://api.point.io/v2/folders/list.json'
 	url_create = 'https://api.point.io/v2/folders/create.json'
 	session = requests
+	json_cache = None
 	def __init__(self, folderid, authorization, path, parent = None, lastModified = None, size = None, containerid = None):
 		super(DirectoryInformation, self).__init__(path, lastModified, size, parent) 
 
@@ -123,16 +124,20 @@ class DirectoryInformation(fs.DirectoryInformation):
 		self.authorization = authorization
 		self.containerid = containerid
 		
+	def getJSONResult(self):
+		if not self.json_cache:
+			query_args = { 'folderId':self.folderid.encode('utf-8'), 'containerid': self.containerid.encode('utf-8')  }
+			data = urllib.urlencode(query_args)
+			res = self.session.get(self.url_list + "?" + data, 
+				headers = {
+					"Authorization": self.authorization
+				})
+			
+			self.json_cache = res.json()
+		return self.json_cache
 
 	def getFiles(self):
-		query_args = { 'folderId':self.folderid.encode('utf-8'), 'containerid': self.containerid.encode('utf-8')  }
-		data = urllib.urlencode(query_args)
-		res = self.session.get(self.url_list + "?" + data, 
-			headers = {
-				"Authorization": self.authorization
-			})
-		
-		py = res.json()
+		py = self.getJSONResult()
 
 		for item in py["RESULT"]["DATA"]:
 			if (item[2] != "DIR"):
@@ -145,14 +150,7 @@ class DirectoryInformation(fs.DirectoryInformation):
 				yield FileInformation(fullPath, lastModified, size, self, self.authorization, self.folderid, fileid, self.containerid).setSession(self.session)
 
 	def getDirectories(self):
-		query_args = { 'folderId': self.folderid.encode('utf-8'), 'containerid': self.containerid.encode('utf-8') }
-		data = urllib.urlencode(query_args)
-		res = self.session.get(self.url_list + "?" + data,
-			headers = {
-				"Authorization": self.authorization
-			})
-
-		py = res.json()
+		py = self.getJSONResult()
 		# folderid, authorization, parent
 		for item in py["RESULT"]["DATA"]:
 			if (item[2] == "DIR"):
@@ -216,9 +214,27 @@ class FileSystem(fs.FileSystem):
 	folderid = None
 	authorization = None
 	session = None
-	def __init__(self, folderid, authorization):
+	def __init__(self, folderid, authorization, rootDir = '/'):
 		self.folderid = folderid
 		self.authorization = authorization
 		self.session = requests.session()
+		self.rootDir = rootDir.replace("\\","/")
+
+
 	def getRoot(self):
-		return DirectoryInformation(self.folderid, self.authorization, self.rootDir, None, None, None, '').setSession(self.session)
+		rootDir = DirectoryInformation(self.folderid, self.authorization, self.rootDir, None, None, None, '').setSession(self.session)
+		workingDir = rootDir
+		for segment in self.rootDir.split("/"):
+			if segment == "":
+				continue
+			resultList = [dir for dir in workingDir.getDirectories() if dir.name == segment]
+			if len(resultList) > 0:
+				workingDir = resultList[0]
+				continue
+
+			workingDir = workingDir.createDirectory(segment)
+
+		workingDir.parent = None
+		return workingDir
+
+
