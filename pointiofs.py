@@ -1,4 +1,4 @@
-from .api import fs
+from api import fs
 #import fs
 import os
 import os.path
@@ -142,7 +142,9 @@ class DirectoryInformation(fs.DirectoryInformation):
 		self.containerID = containerID
 		self.originalPath = originalPath
 
-		
+	def delete(self):
+		pass
+
 	def getJSONResult(self, refresh=False):
 		if not self.json_cache or refresh:
 			query_args = { 

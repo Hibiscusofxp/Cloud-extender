@@ -1,6 +1,7 @@
 import wx, json
 import sync, sys, os, urllib
 import wx.html2 
+import monitor
 
 class MyBrowser(wx.Dialog): 
   def __init__(self, *args, **kwds): 
@@ -74,7 +75,8 @@ class Example(wx.Frame):
         try:
             Authresp = self.Auth(self.emailBox.GetValue(), self.passwordBox.GetValue(), self.apikeyBox.GetValue())
             if Authresp['ERROR'] == 0:
-                #runsynccode
+                self.monitor = monitor.Monitor(self.sessionkey, self.pathBox.GetValue())
+                self.monitor.start()
                 dialog.browser.LoadURL("http://www.ADDPREDICTIONAPIOAUTH.com")
                 dialog.Show()
                 print "awesome"

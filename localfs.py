@@ -1,4 +1,4 @@
-from .api import fs
+from api import fs
 import os
 import os.path
 import stat

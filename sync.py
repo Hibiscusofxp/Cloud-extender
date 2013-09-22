@@ -62,7 +62,7 @@ class MultiSynchronizer:
 		self.local = localFS
 		self.remotes = remoteFSs
 
-	def synchronize(self):
+	def synchronize(self, deletefiles = None):
 		print "Loading remote file lists"
 
 		q = Queue.Queue()
@@ -100,7 +100,7 @@ class MultiSynchronizer:
 
 		downloads = {}
 		uploads = {}
-		deletions = {} #Usedly currently only when there is a conflict between the file systems.
+		deletions = []
 
 		print "Resolving changes"
 
@@ -124,6 +124,16 @@ class MultiSynchronizer:
 					uploads[path] = (obj, None, None)
 				elif obj.lastModified > targetFound.lastModified:
 					uploads[path] = (obj, targetFound, listFound)
+
+		if deletefiles:
+			for path in deletefiles:
+				if path in localList:
+					continue
+				if path in downloads:
+					del downloads[path]
+				for remoteList in remoteLists:
+					if path in remoteList:
+						deletions.append(remoteList[path])
 
 		print "Downloading"
 		for path, obj in downloads.iteritems():
@@ -172,4 +182,8 @@ class MultiSynchronizer:
 				os.utime(obj.fullPath, (mtime, mtime))
 			except Exception as ex:
 				print u"Failed: " + unicode(ex)
+		print "Deleting"
 
+		for obj in deletions:
+			print "Deleting %s" % (obj.fullPath)
+			obj.delete()
