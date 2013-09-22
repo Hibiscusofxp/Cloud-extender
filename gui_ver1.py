@@ -150,7 +150,7 @@ class Example(wx.Frame):
         self.browseButton = wx.Button(self, id=-1, label="&...", pos=(375, 280), size=(35, 30))
         self.submitButton = wx.Button(self, id=-1, label="&Login", pos=(225, 165), size=(60, 30))
         self.gauge = wx.Gauge(self, id=-1, pos=(150,150), size=(300, 30))
-        self.syncstatusLabel = wx.StaticText(self, id=-1, label="&Sync Status:", pos=(50, 285), size=(60, 30))
+        self.syncstatusLabel = wx.StaticText(self, id=-1, label="&Sync Status:", pos=(60, 155), size=(100, 30))
         self.gauge.Hide()
         self.syncstatusLabel.Hide()
         
@@ -288,7 +288,7 @@ class InfoDia(wx.Dialog):
         hbox2 = wx.BoxSizer(wx.HORIZONTAL)
         st2 = wx.StaticText(panel, label='Remaining Storage: ')
         st2.SetFont(font)
-        st3 = wx.StaticText(panel, label=str(self.dropbox+self.box+self.drive) + 'GB / ' + str(self.total) + 'GB')
+        st3 = wx.StaticText(panel, label=str(self.total-(self.dropbox+self.box+self.drive)) + 'GB / ' + str(self.total) + 'GB')
         st3.SetFont(font)
         hbox2.Add(st2)
         hbox2.Add(st3)
