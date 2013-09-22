@@ -13,6 +13,9 @@ import config
 
 import dateutil.tz
 
+import threading
+import Queue
+
 def loadDirDict(dir, dct):
 	size = dir.size or 0
 
@@ -60,20 +63,37 @@ class MultiSynchronizer:
 		self.remotes = remoteFSs
 
 	def synchronize(self):
+		print "Loading remote file lists"
+
+		q = Queue.Queue()
+		results = []
+		def remoteLoader():
+			while True:
+				remote = q.get()
+				print "Loading %s" % (remote,)
+				results.append(loadFSDict(remote))
+				q.task_done()
+
+		for i in range(5):
+			t = threading.Thread(target=remoteLoader)
+			t.daemon = True
+			t.start()
+
+		for remote in self.remotes:
+			q.put(remote)
+
+
 		print "Loading local file list"
 		localList, localSize = loadFSDict(self.local)
 
-		print "Loading remote file lists"
+		q.join()
 
 		remoteLists = []
 		remoteSizes = []
 
-		for remote in self.remotes:
-			print "Loading %s" % (remote,)
-			lst, sz = loadFSDict(remote)
-			remoteLists.append(lst)
+		for dct, sz in results:
+			remoteLists.append(dct)
 			remoteSizes.append(sz)
-
 
 		if config.FILE_DISTRIBUTION_MODE == 1:
 			remoteListLookup = getIndexDictionary(remoteLists)
@@ -133,13 +153,20 @@ class MultiSynchronizer:
 					remoteObj.upload(obj.download())
 					newObj = remoteObj
 				else:
-					remoteList = remoteLists[getSortedDictList(remoteSizes)[0]['index']]
-					makedirs(remoteList, os.path.dirname(path))
+					sortedList = getSortedDictList(remoteSizes)
 
-					if config.FILE_DISTRIBUTION_MODE == 1:
-						remoteSizes[remoteListLookup[id(remoteList)]] += obj.size
+					for i in range(0, len(sortedList)):
+						try:
+							remoteList = remoteLists[sortedList[i]['index']]
+							makedirs(remoteList, os.path.dirname(path))
 
-					newObj = remoteList[os.path.dirname(path)].createFile(os.path.basename(path), obj.download())
+							if config.FILE_DISTRIBUTION_MODE == 1:
+								remoteSizes[remoteListLookup[id(remoteList)]] += obj.size
+
+							newObj = remoteList[os.path.dirname(path)].createFile(os.path.basename(path), obj.download())
+							break
+						except Exception as ex:
+							print u"Failed " + unicode(ex) + ". Switching to other providers."
 
 				mtime = time.mktime(newObj.lastModified.astimezone(dateutil.tz.tzlocal()).timetuple())
 				os.utime(obj.fullPath, (mtime, mtime))
